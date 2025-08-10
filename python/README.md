@@ -2,7 +2,7 @@
 
 [![Python Version](https://img.shields.io/badge/python-3.8%2B-blue.svg)](https://python.org)
 [![PyPI Version](https://img.shields.io/pypi/v/sec-edgar-toolkit.svg)](https://pypi.org/project/sec-edgar-toolkit/)
-[![License](https://img.shields.io/badge/license-GPL%20v3-blue.svg)](LICENSE)
+[![License](https://img.shields.io/badge/license-AGPL%20v3-blue.svg)](LICENSE)
 [![Test Coverage](https://img.shields.io/badge/coverage-97%25-brightgreen.svg)](htmlcov/index.html)
 [![Code Style](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/astral-sh/ruff)
 [![Type Checked](https://img.shields.io/badge/type%20checked-mypy-blue.svg)](https://mypy.readthedocs.io/)
@@ -240,7 +240,7 @@ pytest --cov=src tests/
 
 ## License
 
-GNU General Public License v3.0 - see [LICENSE](LICENSE) file for details.
+GNU Affero General Public License v3.0 - see [LICENSE](LICENSE) file for details.
 
 ## Contributing
 

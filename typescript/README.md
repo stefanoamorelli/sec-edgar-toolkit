@@ -259,4 +259,4 @@ pnpm run format
 
 ## License
 
-MIT License
+GNU Affero General Public License v3.0 - see [LICENSE](LICENSE) file for details.
