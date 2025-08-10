@@ -1,0 +1,66 @@
+name: Python CI
+
+on:
+  pull_request:
+    branches: [ main ]
+    paths: 
+      - 'python/**'
+      - '.github/workflows/python-ci.yml'
+  push:
+    branches: [ main ]
+    paths:
+      - 'python/**'
+      - '.github/workflows/python-ci.yml'
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
+    
+    defaults:
+      run:
+        working-directory: ./python
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Cache pip dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/pyproject.toml') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e ".[dev]"
+
+    - name: Run ruff linter
+      run: ruff check src/
+
+    - name: Run ruff formatter check  
+      run: ruff format --check src/
+
+    - name: Run mypy type checker
+      run: mypy src/
+
+    - name: Run tests with coverage
+      run: pytest --cov=src/sec_edgar_toolkit --cov-report=xml --cov-report=term-missing
+
+    - name: Upload coverage to Codecov
+      if: matrix.python-version == '3.11'
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./python/coverage.xml
+        flags: python
+        name: python-coverage

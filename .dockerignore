@@ -1,0 +1,87 @@
+# Ignore development and build artifacts
+node_modules/
+dist/
+build/
+.next/
+.nuxt/
+
+# Python artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+.env
+pip-log.txt
+pip-delete-this-directory.txt
+.tox/
+.coverage
+.pytest_cache/
+htmlcov/
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# Documentation and non-essential files
+*.md
+!README.md
+docs/
+.github/
+
+# Test and development files
+coverage/
+.nyc_output/
+jest.config.js
+.eslintrc*
+.prettierrc*
+tsconfig.json
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+
+# Runtime and temporary files
+.tmp/
+.temp/
+tmp/
+temp/
+
+# Package manager locks (keep in image build but not needed in context)
+# Commenting these out since we need them for dependency installation
+# package-lock.json
+# yarn.lock
+# pnpm-lock.yaml
+# poetry.lock
+
+# Build outputs that shouldn't be in Docker context
+*.egg-info/
+.eggs/
+wheels/

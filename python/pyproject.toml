@@ -1,0 +1,100 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sec-edgar-toolkit"
+version = "0.1.0"
+description = "Open source toolkit to facilitate working with the SEC EDGAR database"
+readme = "README.md"
+requires-python = ">=3.8"
+license = { text = "AGPL-3.0" }
+authors = [{ name = "Stefano Amorelli", email = "stefano@amorelli.tech" }]
+keywords = [
+  "SEC",
+  "EDGAR",
+  "finance",
+  "filings",
+  "10-K",
+  "10-Q",
+  "8-K",
+  "securities",
+]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "Intended Audience :: Financial and Insurance Industry",
+  "License :: OSI Approved :: GNU Affero General Public License v3",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Office/Business :: Financial",
+  "Topic :: Software Development :: Libraries :: Python Modules",
+]
+dependencies = [
+  "requests>=2.31.0",
+  "beautifulsoup4>=4.12.0",
+  "lxml>=4.9.0",
+  "pandas>=2.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=7.4.0",
+  "pytest-cov>=4.1.0",
+  "pytest-asyncio>=0.21.0",
+  "black>=23.7.0",
+  "ruff>=0.1.0",
+  "mypy>=1.5.0",
+  "types-requests>=2.31.0",
+  "pre-commit>=3.3.0",
+  "responses>=0.24.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/stefanoamorelli/sec-edgar-toolkit"
+Documentation = "https://github.com/stefanoamorelli/sec-edgar-toolkit#readme"
+Repository = "https://github.com/stefanoamorelli/sec-edgar-toolkit.git"
+Issues = "https://github.com/stefanoamorelli/sec-edgar-toolkit/issues"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.black]
+line-length = 88
+target-version = ['py38']
+
+[tool.mypy]
+python_version = "3.8"
+warn_return_any = true
+warn_unused_configs = true
+ignore_missing_imports = true
+
+[tool.ruff]
+line-length = 88
+target-version = "py38"
+
+[tool.ruff.lint]
+select = [
+  "E",   # pycodestyle errors
+  "W",   # pycodestyle warnings
+  "F",   # pyflakes
+  "I",   # isort
+  "B",   # flake8-bugbear
+  "C4",  # flake8-comprehensions
+  "UP",  # pyupgrade
+  "ARG", # flake8-unused-arguments
+  "SIM", # flake8-simplify
+]
+ignore = ["E501", "UP006", "UP007"]  # line too long, use List/Dict, use Optional
+
+[tool.ruff.lint.isort]
+known-first-party = ["sec_edgar_toolkit"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+

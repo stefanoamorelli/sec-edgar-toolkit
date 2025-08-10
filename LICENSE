@@ -1,0 +1,25 @@
+SEC EDGAR Toolkit
+Copyright (C) 2024 Stefano Amorelli
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as published
+by the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with this program. If not, see <https://www.gnu.org/licenses/>.
+
+---
+
+IMPORTANT: This software is licensed under the GNU Affero General Public License v3.0 (AGPL-3.0).
+This means:
+- You can use, modify, and distribute this software
+- If you modify and distribute it, you must release your changes under AGPL-3.0
+- If you run a modified version on a server, you must provide the source code to users
+
+For commercial licensing options or other licensing inquiries, please contact stefano@amorelli.tech.

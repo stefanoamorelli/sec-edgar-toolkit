@@ -1,0 +1,36 @@
+name: Python Lint and Type Check
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'python/**'
+      - '.github/workflows/python-lint-check.yml'
+
+jobs:
+  lint-and-typecheck:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install dependencies
+      run: |
+        cd python
+        python -m pip install --upgrade pip
+        pip install -e .[dev]
+    
+    - name: Run ruff lint
+      run: |
+        cd python
+        ruff check src/ tests/
+    
+    - name: Run mypy type check
+      run: |
+        cd python
+        mypy src/

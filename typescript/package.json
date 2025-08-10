@@ -1,0 +1,58 @@
+{
+  "name": "sec-edgar-toolkit",
+  "version": "0.1.0",
+  "description": "Open source toolkit to facilitate working with the SEC EDGAR database",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "jest",
+    "lint": "eslint src --ext ts",
+    "format": "prettier --write \"src/**/*.ts\"",
+    "type-check": "tsc --noEmit",
+    "prepublishOnly": "pnpm run build"
+  },
+  "keywords": [
+    "SEC",
+    "EDGAR",
+    "finance",
+    "filings",
+    "10-K",
+    "10-Q",
+    "8-K",
+    "securities"
+  ],
+  "author": {
+    "name": "Stefano Amorelli",
+    "email": "stefano@amorelli.tech",
+    "url": "https://amorelli.tech"
+  },
+  "license": "AGPL-3.0",
+  "dependencies": {
+    "fast-xml-parser": "^5.2.5",
+    "node-fetch": "^2.7.0"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.12",
+    "@types/node": "^20.11.0",
+    "@types/node-fetch": "^2.6.11",
+    "@typescript-eslint/eslint-plugin": "^6.19.0",
+    "@typescript-eslint/parser": "^6.19.0",
+    "eslint": "^8.56.0",
+    "jest": "^29.7.0",
+    "prettier": "^3.2.4",
+    "ts-jest": "^29.1.2",
+    "typescript": "^5.3.3"
+  },
+  "files": [
+    "dist"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/sec-edgar-toolkit.git"
+  },
+  "bugs": {
+    "url": "https://github.com/yourusername/sec-edgar-toolkit/issues"
+  },
+  "homepage": "https://github.com/yourusername/sec-edgar-toolkit#readme"
+}

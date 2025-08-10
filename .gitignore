@@ -1,0 +1,56 @@
+# Dependencies
+node_modules/
+*.pyc
+__pycache__/
+.Python
+env/
+venv/
+ENV/
+.venv
+
+# Build outputs
+dist/
+build/
+*.egg-info/
+.eggs/
+*.egg
+
+# TypeScript
+typescript/dist/
+typescript/*.tsbuildinfo
+typescript/coverage/
+
+# Python
+python/htmlcov/
+python/.coverage
+python/.pytest_cache/
+python/.mypy_cache/
+python/.ruff_cache/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Testing
+coverage/
+.nyc_output/
+junit.xml
+test-results.xml
+
+# Logs
+*.log
+logs/
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Package manager files
+package-lock.json
+yarn.lock
+pnpm-lock.yaml

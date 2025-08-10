@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ownershipDocument>
+    <schemaVersion>X0306</schemaVersion>
+    <documentType>5</documentType>
+    <periodOfReport>2023-12-31</periodOfReport>
+    <notSubjectToSection16>false</notSubjectToSection16>
+    <issuer>
+        <issuerCik>0000789019</issuerCik>
+        <issuerName>Microsoft Corporation</issuerName>
+        <issuerTradingSymbol>MSFT</issuerTradingSymbol>
+    </issuer>
+    <reportingOwner>
+        <reportingOwnerId>
+            <rptOwnerCik>0001633917</rptOwnerCik>
+            <rptOwnerName>NADELLA SATYA</rptOwnerName>
+            <rptOwnerStreet1>ONE MICROSOFT WAY</rptOwnerStreet1>
+            <rptOwnerStreet2></rptOwnerStreet2>
+            <rptOwnerCity>REDMOND</rptOwnerCity>
+            <rptOwnerState>WA</rptOwnerState>
+            <rptOwnerZipCode>98052</rptOwnerZipCode>
+            <rptOwnerStateDescription></rptOwnerStateDescription>
+        </reportingOwnerId>
+        <reportingOwnerRelationship>
+            <isDirector>true</isDirector>
+            <isOfficer>true</isOfficer>
+            <isTenPercentOwner>false</isTenPercentOwner>
+            <isOther>false</isOther>
+            <officerTitle>Chairman and Chief Executive Officer</officerTitle>
+        </reportingOwnerRelationship>
+    </reportingOwner>
+    <nonDerivativeTable>
+        <nonDerivativeTransaction>
+            <securityTitle>
+                <value>Common Stock</value>
+            </securityTitle>
+            <transactionDate>
+                <value>2023-08-15</value>
+            </transactionDate>
+            <transactionCoding>
+                <transactionFormType>5</transactionFormType>
+                <transactionCode>A</transactionCode>
+                <equitySwapInvolved>false</equitySwapInvolved>
+            </transactionCoding>
+            <transactionAmounts>
+                <transactionShares>
+                    <value>2500</value>
+                </transactionShares>
+                <transactionPricePerShare>
+                    <value>0.00</value>
+                </transactionPricePerShare>
+                <transactionAcquiredDisposedCode>
+                    <value>A</value>
+                </transactionAcquiredDisposedCode>
+            </transactionAmounts>
+            <postTransactionAmounts>
+                <sharesOwnedFollowingTransaction>
+                    <value>1575000</value>
+                </sharesOwnedFollowingTransaction>
+                <directOrIndirectOwnership>
+                    <value>D</value>
+                </directOrIndirectOwnership>
+            </postTransactionAmounts>
+            <ownershipNature>
+                <value>Direct</value>
+            </ownershipNature>
+        </nonDerivativeTransaction>
+        <nonDerivativeHolding>
+            <securityTitle>
+                <value>Common Stock</value>
+            </securityTitle>
+            <sharesOwned>
+                <value>1575000</value>
+            </sharesOwned>
+            <directOrIndirectOwnership>
+                <value>D</value>
+            </directOrIndirectOwnership>
+            <ownershipNature>
+                <value>Direct</value>
+            </ownershipNature>
+        </nonDerivativeHolding>
+    </nonDerivativeTable>
+    <derivativeTable>
+        <derivativeHolding>
+            <securityTitle>
+                <value>Performance Stock Unit</value>
+            </securityTitle>
+            <conversionOrExercisePrice>
+                <value>0.00</value>
+            </conversionOrExercisePrice>
+            <exerciseDate>
+                <value>2024-08-15</value>
+            </exerciseDate>
+            <expirationDate>
+                <value>2024-08-15</value>
+            </expirationDate>
+            <underlyingSecurity>
+                <underlyingSecurityTitle>
+                    <value>Common Stock</value>
+                </underlyingSecurityTitle>
+                <underlyingSecurityShares>
+                    <value>15000</value>
+                </underlyingSecurityShares>
+            </underlyingSecurity>
+            <postTransactionAmounts>
+                <sharesOwnedFollowingTransaction>
+                    <value>15000</value>
+                </sharesOwnedFollowingTransaction>
+                <directOrIndirectOwnership>
+                    <value>D</value>
+                </directOrIndirectOwnership>
+            </postTransactionAmounts>
+            <ownershipNature>
+                <value>Direct</value>
+            </ownershipNature>
+        </derivativeHolding>
+    </derivativeTable>
+    <footnotes>
+        <footnote id="F1">These shares vest in equal installments over 4 years.</footnote>
+    </footnotes>
+    <remarks>Annual Form 5 filing for exempt transactions</remarks>
+    <ownerSignature>
+        <signatureName>NADELLA SATYA</signatureName>
+        <signatureDate>2024-02-15</signatureDate>
+    </ownerSignature>
+</ownershipDocument>

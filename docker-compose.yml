@@ -1,0 +1,93 @@
+version: '3.8'
+
+services:
+  # TypeScript development environment
+  typescript-dev:
+    build:
+      context: .
+      target: typescript-dev
+    container_name: sec-edgar-typescript-dev
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./typescript:/app
+      - /app/node_modules  # Prevent overwriting node_modules
+    environment:
+      - NODE_ENV=development
+    command: ["pnpm", "run", "test", "--watchAll"]
+    networks:
+      - sec-edgar-net
+
+  # Python development environment  
+  python-dev:
+    build:
+      context: .
+      target: python-dev
+    container_name: sec-edgar-python-dev
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./python:/app
+    environment:
+      - PYTHONPATH=/app/src
+      - PYTHONDONTWRITEBYTECODE=1
+    command: ["pytest", "--cov", "--cov-report=html", "--cov-report=term"]
+    networks:
+      - sec-edgar-net
+
+  # Combined development environment
+  dev:
+    build:
+      context: .
+      target: dev
+    container_name: sec-edgar-dev-combined
+    ports:
+      - "3001:3000"  # TypeScript dev server
+      - "8001:8000"  # Python dev server
+    volumes:
+      - ./typescript:/app/typescript
+      - ./python:/app/python
+      - /app/typescript/node_modules  # Prevent overwriting node_modules
+    environment:
+      - NODE_ENV=development
+      - PYTHONPATH=/app/python/src
+      - PYTHONDONTWRITEBYTECODE=1
+    command: ["bash"]
+    stdin_open: true
+    tty: true
+    networks:
+      - sec-edgar-net
+
+  # TypeScript production
+  typescript-prod:
+    build:
+      context: .
+      target: typescript
+    container_name: sec-edgar-typescript-prod
+    ports:
+      - "3002:3000"
+    environment:
+      - NODE_ENV=production
+    networks:
+      - sec-edgar-net
+
+  # Python production
+  python-prod:
+    build:
+      context: .
+      target: python
+    container_name: sec-edgar-python-prod
+    ports:
+      - "8002:8000"
+    environment:
+      - PYTHONPATH=/app/src
+    networks:
+      - sec-edgar-net
+
+networks:
+  sec-edgar-net:
+    driver: bridge
+
+volumes:
+  node_modules:
+  python_packages:

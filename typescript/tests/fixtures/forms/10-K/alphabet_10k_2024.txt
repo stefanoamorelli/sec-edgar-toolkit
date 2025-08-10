@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Error><Code>NoSuchKey</Code><Message>The specified key does not exist.</Message><Key>edgar/data/1652044/000165204424000108/0001652204-24-000108.txt</Key><RequestId>YPT1FEY5X9WJK98H</RequestId><HostId>6zndd5TcairibLM/rhNVIYjA8JduUrkHq/e9eFBzucMb6kiVLhMhXkFSn1wTMH0JfpbXbxueayc=</HostId></Error>
