@@ -1,0 +1,32 @@
+cff-version: 1.2.0
+message: "If you use this software in your research or work, please cite it as follows."
+authors:
+  - family-names: Amorelli
+    given-names: Stefano
+    orcid: "https://orcid.org/0009-0004-4917-0999"
+title: "SEC EDGAR Toolkit: Open-source toolkit for accessing SEC EDGAR financial data"
+version: 0.1.0
+date-released: 2025-01-06
+url: https://github.com/stefanoamorelli/sec-edgar-toolkit
+repository-code: https://github.com/stefanoamorelli/sec-edgar-toolkit
+license: AGPL-3.0
+keywords:
+  - SEC
+  - EDGAR
+  - finance
+  - financial-data
+  - xbrl
+  - python
+  - typescript
+  - securities
+  - fintech
+  - investment
+preferred-citation:
+  type: software
+  authors:
+    - family-names: Amorelli
+      given-names: Stefano
+      orcid: "https://orcid.org/0009-0004-4917-0999"
+  title: "SEC EDGAR Toolkit: Open-source toolkit for accessing SEC EDGAR financial data"
+  year: 2025
+  url: https://github.com/stefanoamorelli/sec-edgar-toolkit

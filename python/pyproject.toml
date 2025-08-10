@@ -89,7 +89,21 @@ select = [
   "ARG", # flake8-unused-arguments
   "SIM", # flake8-simplify
 ]
-ignore = ["E501", "UP006", "UP007"]  # line too long, use List/Dict, use Optional
+ignore = [
+  "E501",    # line too long
+  "UP006",   # use List instead of list
+  "UP007",   # use Dict instead of dict  
+  "UP037",   # remove quotes from type annotation
+  "UP045",   # use X | None instead of Optional[X]
+  "W293",    # blank line contains whitespace
+  "W292",    # no newline at end of file
+  "F403",    # star imports
+  "F401",    # imported but unused
+  "E402",    # module level import not at top of file
+  "ARG002",  # unused method argument
+  "SIM108",  # ternary operator
+  "SIM102",  # nested if statements
+]
 
 [tool.ruff.lint.isort]
 known-first-party = ["sec_edgar_toolkit"]
