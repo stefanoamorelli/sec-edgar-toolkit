@@ -52,7 +52,7 @@ class OwnershipFormParser:
         """
         self.xml_content = xml_content
         self.parser = EnhancedXMLParser(recover=True, remove_blank_text=True)
-        
+
         try:
             self.root = self.parser.parse_string(xml_content)
         except Exception as e:
