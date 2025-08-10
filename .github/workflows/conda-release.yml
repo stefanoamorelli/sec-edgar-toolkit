@@ -43,7 +43,7 @@ jobs:
           version: {{ version }}
         
         source:
-          url: https://pypi.io/packages/source/{{ name[0] }}/{{ name }}/{{ name }}-{{ version }}.tar.gz
+          url: https://pypi.io/packages/source/{{ name[0] }}/{{ name }}/{{ name|replace("-", "_") }}-{{ version }}.tar.gz
           sha256: ${{ steps.get_hash.outputs.SHA256 }}
         
         build:
