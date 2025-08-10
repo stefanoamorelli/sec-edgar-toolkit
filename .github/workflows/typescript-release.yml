@@ -34,7 +34,12 @@ jobs:
     
     - name: Update version in package.json
       run: |
-        npm version ${{ steps.get_version.outputs.VERSION }} --no-git-tag-version
+        CURRENT_VERSION=$(node -p "require('./package.json').version")
+        if [ "$CURRENT_VERSION" != "${{ steps.get_version.outputs.VERSION }}" ]; then
+          npm version ${{ steps.get_version.outputs.VERSION }} --no-git-tag-version
+        else
+          echo "Version already set to ${{ steps.get_version.outputs.VERSION }}"
+        fi
     
     - name: Build package
       run: pnpm run build
