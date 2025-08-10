@@ -24,6 +24,13 @@ jobs:
       id: get_version
       run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
     
+    - name: Download PyPI package and get hash
+      id: get_hash
+      run: |
+        pip download sec-edgar-toolkit==${{ steps.get_version.outputs.VERSION }} --no-deps
+        SHA256=$(sha256sum sec-edgar-toolkit-${{ steps.get_version.outputs.VERSION }}.tar.gz | cut -d' ' -f1)
+        echo "SHA256=$SHA256" >> $GITHUB_OUTPUT
+        
     - name: Create conda recipe
       run: |
         mkdir -p conda-recipe
@@ -37,7 +44,7 @@ jobs:
         
         source:
           url: https://pypi.io/packages/source/{{ name[0] }}/{{ name }}/{{ name }}-{{ version }}.tar.gz
-          sha256: # This will be filled automatically by conda-build
+          sha256: ${{ steps.get_hash.outputs.SHA256 }}
         
         build:
           noarch: python
@@ -67,7 +74,7 @@ jobs:
         
         about:
           home: https://github.com/stefanoamorelli/sec-edgar-toolkit
-          license: GPL-3.0
+          license: AGPL-3.0
           license_family: GPL
           license_file: LICENSE
           summary: Open source toolkit to facilitate working with the SEC EDGAR database
