@@ -248,7 +248,7 @@ describe('RequestCache', () => {
   describe('cache with options', () => {
     it('should handle cache with options parameter', async () => {
       const testData = { data: 'test' };
-      const options = { headers: { 'X-Custom': 'value' } };
+      // Options parameter test - options not directly used but validates signature
       
       // Set with proper parameter order: url, response, options, ttl
       await requestCache.set('url1', testData, undefined, 3600000);

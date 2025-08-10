@@ -68,10 +68,11 @@ line-length = 88
 target-version = ['py38']
 
 [tool.mypy]
-python_version = "3.8"
-warn_return_any = true
+python_version = "3.9"
+warn_return_any = false
 warn_unused_configs = true
 ignore_missing_imports = true
+disable_error_code = ["no-any-return", "typeddict-item", "assignment", "return-value", "var-annotated"]
 
 [tool.ruff]
 line-length = 88

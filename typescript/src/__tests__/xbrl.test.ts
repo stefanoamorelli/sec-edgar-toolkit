@@ -245,7 +245,8 @@ describe('XBRLInstance', () => {
 
   describe('Integration with Filing', () => {
     it('should work with filing.xbrl() method', async () => {
-      const client = createClient({
+      // Client creation test - validates createClient signature
+      createClient({
         userAgent: 'Test/1.0 (test@example.com)'
       });
 

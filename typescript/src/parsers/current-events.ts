@@ -88,7 +88,7 @@ export class CurrentEventParser {
       const agreementType = typeMatch ? typeMatch[1].trim() : 'Material Agreement';
       
       // Find counterparty
-      const withPattern = /(?:with|between.*?and)\s+([A-Za-z\s]+(?:Inc\.|Corp\.|Technologies|Company|LLC)?)[\s,\.\(]/i;
+      const withPattern = /(?:with|between.*?and)\s+([A-Za-z\s]+(?:Inc\.|Corp\.|Technologies|Company|LLC)?)[\s,.(]/i;
       const withMatch = agreementSection.match(withPattern);
       const counterparty = withMatch ? withMatch[1].trim() : '';
       
