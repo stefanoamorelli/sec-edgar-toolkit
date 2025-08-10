@@ -27,7 +27,7 @@ jobs:
     - name: Download PyPI package and get hash
       id: get_hash
       run: |
-        pip download sec-edgar-toolkit==${{ steps.get_version.outputs.VERSION }} --no-deps
+        pip download sec-edgar-toolkit==${{ steps.get_version.outputs.VERSION }} --no-deps --no-binary :all:
         SHA256=$(sha256sum sec-edgar-toolkit-${{ steps.get_version.outputs.VERSION }}.tar.gz | cut -d' ' -f1)
         echo "SHA256=$SHA256" >> $GITHUB_OUTPUT
         
