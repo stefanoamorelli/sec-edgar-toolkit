@@ -3,6 +3,8 @@
 __version__ = "0.1.0"
 
 # Main fluent API - primary interface
+# Low-level API client
+from .client.sec_edgar_api import SecEdgarApi
 from .edgar import (
     AsyncEdgarClient,
     Company,
@@ -10,9 +12,6 @@ from .edgar import (
     Filing,
     create_client,
 )
-
-# Low-level API client
-from .client.sec_edgar_api import SecEdgarApi
 
 # Exception classes
 from .exceptions import (
