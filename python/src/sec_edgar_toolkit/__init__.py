@@ -11,6 +11,9 @@ from .edgar import (
     create_client,
 )
 
+# Low-level API client
+from .client.sec_edgar_api import SecEdgarApi
+
 # Exception classes
 from .exceptions import (
     AuthenticationError,
@@ -42,6 +45,8 @@ __all__ = [
     "Filing",
     "create_client",
     "AsyncEdgarClient",
+    # Low-level API client
+    "SecEdgarApi",
     # Exception classes
     "SecEdgarApiError",
     "RateLimitError",
