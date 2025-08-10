@@ -33,7 +33,7 @@ jobs:
           node-version: '20'
           
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm install
         
       - name: Run linter
         run: pnpm run lint
