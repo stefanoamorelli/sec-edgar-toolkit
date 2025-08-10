@@ -629,7 +629,7 @@ to attach them to the start of each source file to most effectively
 state the exclusion of warranty; and each file should have at least
 the "copyright" line and a pointer to where the full notice is found.
 
-    sec-edgar-toolkit: A Python toolkit for downloading SEC EDGAR filings and extracting structured data from specific item sections into clean, machine-readable formats.
+    sec-edgar-toolkit - typescript SDK to interact with the SEC EDGAR.
     Copyright (C) 2025 Stefano Amorelli
 
     This program is free software: you can redistribute it and/or modify
