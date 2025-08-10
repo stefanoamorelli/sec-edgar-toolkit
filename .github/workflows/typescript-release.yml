@@ -1,0 +1,45 @@
+name: Release TypeScript Package
+
+on:
+  push:
+    tags:
+      - 'v*'  # Triggers on version tags like v1.0.0
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./typescript
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - uses: pnpm/action-setup@v4
+      with:
+        version: 8
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        registry-url: 'https://registry.npmjs.org'
+    
+    - name: Install dependencies
+      run: pnpm install
+    
+    - name: Extract version from tag
+      id: get_version
+      run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+    
+    - name: Update version in package.json
+      run: |
+        npm version ${{ steps.get_version.outputs.VERSION }} --no-git-tag-version
+    
+    - name: Build package
+      run: pnpm run build
+    
+    - name: Publish to npm
+      run: pnpm publish --no-git-checks
+      env:
+        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
