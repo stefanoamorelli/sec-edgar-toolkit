@@ -206,4 +206,4 @@ See the [LICENSE](LICENSE) file for the full license text.
 
 ---
 
-Copyright © 2025 Stefano Amorelli. All rights reserved.
+Copyright © 2025 [Stefano Amorelli](https://amorelli.tech). All rights reserved.
