@@ -24,6 +24,18 @@ jobs:
       id: get_version
       run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
     
+    - name: Wait for PyPI package availability
+      run: |
+        echo "Waiting for package to be available on PyPI..."
+        for i in {1..30}; do
+          if pip index versions sec-edgar-toolkit 2>/dev/null | grep -q "${{ steps.get_version.outputs.VERSION }}"; then
+            echo "Package version ${{ steps.get_version.outputs.VERSION }} is available on PyPI"
+            break
+          fi
+          echo "Attempt $i: Package not yet available, waiting 30 seconds..."
+          sleep 30
+        done
+        
     - name: Download PyPI package and get hash
       id: get_hash
       run: |
