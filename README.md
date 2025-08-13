@@ -116,7 +116,7 @@ Extract individual items from SEC filings:
 filing = company.get_filing("10-K")
 items = filing.extract_items()
 
-# Output structure similar to edgar-crawler:
+# Output structure:
 {
   "1": "Item 1. Business\nThe Company designs, manufactures...",
   "1A": "Item 1A. Risk Factors\nThe Company's business...", 
@@ -186,6 +186,25 @@ docker-compose up typescript-prod python-prod
 
 - [TypeScript Documentation](./typescript/README.md)
 - [Python Documentation](./python/README.md)
+
+## Acknowledgements and Thanks
+
+This project was inspired by and builds upon the excellent work of the SEC EDGAR community. Special thanks to the maintainers and contributors of these projects that have paved the way for accessible financial data:
+
+### Python Community
+- **[python-edgar](https://pypi.org/project/python-edgar/)** - For pioneering Python-based EDGAR access
+- **[sec-api](https://github.com/janlukasschroeder/sec-api-python)** - For demonstrating clean API design patterns
+- **[edgar-crawler](https://github.com/nlpaueb/edgar-crawler)** - For innovative approaches to document parsing
+- **[pyedgar](https://github.com/gaulinmp/pyedgar)** - For comprehensive filing download capabilities
+- **[sec-edgar-downloader](https://github.com/jadchaar/sec-edgar-downloader)** - For simplified bulk download functionality
+
+### JavaScript/TypeScript Community
+- **[sec-api](https://github.com/janlukasschroeder/sec-api)** - For bringing EDGAR data to the Node.js ecosystem
+
+### R Community
+- **[edgarWebR](https://github.com/mwaldstein/edgarWebR)** - For making EDGAR data accessible to data scientists using R
+
+We're grateful for the open-source community's collective effort in democratizing access to public financial data. This toolkit aims to contribute to this ecosystem by providing a modern, type-safe, and multi-language solution.
 
 ## Contributing
 
