@@ -5,8 +5,8 @@ import pytest
 from sec_edgar_toolkit.client import SecEdgarApi
 
 # Import all fixtures
-from .fixtures.company_fixtures import mock_company_tickers, mock_company_submissions
-from .fixtures.filing_fixtures import mock_filing_data, mock_xbrl_facts, mock_frame_data
+from .fixtures.company_fixtures import mock_company_submissions, mock_company_tickers
+from .fixtures.filing_fixtures import mock_filing_data, mock_frame_data, mock_xbrl_facts
 
 
 @pytest.fixture
