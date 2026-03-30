@@ -99,12 +99,16 @@ class EnhancedXMLParser:
                 except Exception:
                     pass
 
-        if isinstance(xml_content, bytes):
-            xml_content = xml_content.decode(self.encoding or "utf-8")
-
         if LXML_AVAILABLE:
+            # lxml handles bytes natively and requires bytes when an
+            # XML encoding declaration is present.
+            if isinstance(xml_content, str):
+                xml_content = xml_content.encode(self.encoding or "utf-8")
             return etree.fromstring(xml_content, parser=self.parser)
         else:
+            # stdlib ElementTree needs a string without encoding declaration
+            if isinstance(xml_content, bytes):
+                xml_content = xml_content.decode(self.encoding or "utf-8")
             return etree.fromstring(xml_content)
 
     def parse_file(self, file_path: str) -> Element:
