@@ -402,7 +402,15 @@ class FinancialFormParser:
 
     def _parse_number(self, value: str) -> float:
         """Parse number from string, removing commas and dollar signs."""
-        return float(re.sub(r"[,$]", "", value)) if value else 0.0
+        if not value:
+            return 0.0
+        cleaned = re.sub(r"[,$\s]", "", value).strip()
+        if not cleaned or cleaned in ("-", "—", "N/A", "n/a"):
+            return 0.0
+        try:
+            return float(cleaned)
+        except ValueError:
+            return 0.0
 
     def _parse_date(self, date_str: Optional[str]) -> datetime:
         """Parse date from YYYYMMDD format."""

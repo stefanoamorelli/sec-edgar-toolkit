@@ -39,7 +39,7 @@ class TestSecEdgarApiIntegration:
                     [1018724, "AMAZON COM INC", "AMZN", "Nasdaq"],
                     [1326801, "Meta Platforms, Inc.", "META", "Nasdaq"],
                     [1559720, "Alphabet Inc.", "GOOGL", "Nasdaq"],
-                ]
+                ],
             },
             "apple_submissions": {
                 "cik": "0000320193",
@@ -584,4 +584,3 @@ class TestSecEdgarApiIntegration:
         # Force refresh
         api_client.get_company_tickers(force_refresh=True)
         assert len(responses.calls) == 2
-

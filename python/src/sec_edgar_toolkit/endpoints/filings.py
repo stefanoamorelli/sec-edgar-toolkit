@@ -2,10 +2,15 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, Optional, Union
+import logging
+import re
+import xml.etree.ElementTree as ET
+from typing import Any, Dict, List, Optional, Union
 from urllib.parse import urljoin
 
 from ..utils import FilingFilter, HttpClient
+
+logger = logging.getLogger(__name__)
 
 
 class FilingsEndpoints:
@@ -16,6 +21,7 @@ class FilingsEndpoints:
     - Company submissions (all filings for a company)
     - Individual filing details
     - Filing document retrieval
+    - Recent filings across all companies via EDGAR RSS
     - Filtering and search capabilities
 
     Args:
@@ -28,6 +34,7 @@ class FilingsEndpoints:
     """
 
     DATA_URL = "https://data.sec.gov/"
+    CURRENT_FILINGS_URL = "https://www.sec.gov/cgi-bin/browse-edgar"
 
     def __init__(self, http_client: HttpClient) -> None:
         """Initialize filings endpoints."""
@@ -112,3 +119,167 @@ class FilingsEndpoints:
         )
 
         return self.http_client.get(url)
+
+    def get_recent_filings(
+        self,
+        form_type: Optional[Union[str, List[str]]] = None,
+        limit: int = 40,
+        owner: str = "include",
+        start: int = 0,
+    ) -> List[Dict[str, Any]]:
+        """
+        Get recent filings across all companies using the SEC EDGAR Atom feed.
+
+        This endpoint queries the SEC EDGAR current filings feed to retrieve
+        recently filed documents without requiring a specific company identifier.
+
+        Args:
+            form_type: Filter by form type(s) (e.g., "10-K", ["10-K", "10-Q"]).
+                       When a list is provided, multiple requests are made and
+                       results are merged.
+            limit: Maximum number of filings to return (default: 40, max: 100)
+            owner: Ownership filter - "include", "exclude", or "only" (default: "include")
+            start: Starting offset for pagination (default: 0)
+
+        Returns:
+            List of filing dicts with keys: cik, accession_number, form_type,
+            filing_date, company_name, url
+
+        Example:
+            >>> filings = endpoints.get_recent_filings(form_type="10-K", limit=10)
+            >>> for f in filings:
+            ...     print(f"{f['company_name']}: {f['form_type']} ({f['filing_date']})")
+        """
+        if isinstance(form_type, list):
+            # Merge results from multiple form types
+            all_filings: List[Dict[str, Any]] = []
+            per_type_limit = max(limit // len(form_type), 10)
+            for ft in form_type:
+                type_filings = self._fetch_current_filings_feed(
+                    form_type=ft, count=per_type_limit, owner=owner, start=start
+                )
+                all_filings.extend(type_filings)
+
+            # Sort by filing date descending and trim to limit
+            all_filings.sort(key=lambda x: x.get("filing_date", ""), reverse=True)
+            return all_filings[:limit]
+
+        return self._fetch_current_filings_feed(
+            form_type=form_type, count=min(limit, 100), owner=owner, start=start
+        )
+
+    def _fetch_current_filings_feed(
+        self,
+        form_type: Optional[str] = None,
+        count: int = 40,
+        owner: str = "include",
+        start: int = 0,
+    ) -> List[Dict[str, Any]]:
+        """
+        Fetch recent filings from the SEC EDGAR Atom feed.
+
+        Args:
+            form_type: Form type filter (e.g., "10-K")
+            count: Number of results to fetch
+            owner: Ownership filter
+            start: Pagination offset
+
+        Returns:
+            List of filing dicts parsed from the Atom feed
+        """
+        params = {
+            "action": "getcurrent",
+            "type": form_type or "",
+            "dateb": "",
+            "owner": owner,
+            "count": str(count),
+            "search_text": "",
+            "start": str(start),
+            "output": "atom",
+        }
+
+        try:
+            content = self.http_client.get_raw(self.CURRENT_FILINGS_URL, params=params)
+            return self._parse_atom_feed(content)
+        except Exception as e:
+            logger.error(f"Failed to fetch current filings feed: {e}")
+            return []
+
+    @staticmethod
+    def _parse_atom_feed(content: bytes) -> List[Dict[str, Any]]:
+        """
+        Parse an Atom feed of SEC filings into structured dicts.
+
+        Args:
+            content: Raw XML bytes of the Atom feed
+
+        Returns:
+            List of filing dicts with keys: cik, accession_number, form_type,
+            filing_date, company_name, url
+        """
+        ns = {"atom": "http://www.w3.org/2005/Atom"}
+        filings: List[Dict[str, Any]] = []
+
+        try:
+            root = ET.fromstring(content)
+        except ET.ParseError as e:
+            logger.error(f"Failed to parse Atom feed: {e}")
+            return filings
+
+        for entry in root.findall("atom:entry", ns):
+            try:
+                title_el = entry.find("atom:title", ns)
+                title = (title_el.text or "") if title_el is not None else ""
+
+                link_el = entry.find("atom:link", ns)
+                url = link_el.get("href", "") if link_el is not None else ""
+
+                summary_el = entry.find("atom:summary", ns)
+                summary = (
+                    summary_el.text.strip()
+                    if summary_el is not None and summary_el.text
+                    else ""
+                )
+
+                category_el = entry.find("atom:category", ns)
+                form = category_el.get("term", "") if category_el is not None else ""
+
+                # Parse CIK from title: "10-K - Company Name (0000946644) (Filer)"
+                cik = ""
+                cik_match = re.search(r"\((\d{7,10})\)", title)
+                if cik_match:
+                    cik = cik_match.group(1).zfill(10)
+
+                # Parse accession number from summary: "AccNo: 0001493152-26-013301"
+                accession = ""
+                acc_match = re.search(r"AccNo.*?(\d{10}-\d{2}-\d{6})", summary)
+                if acc_match:
+                    accession = acc_match.group(1)
+
+                # Parse filing date from summary: "Filed: 2026-03-27"
+                filing_date = ""
+                date_match = re.search(r"Filed.*?(\d{4}-\d{2}-\d{2})", summary)
+                if date_match:
+                    filing_date = date_match.group(1)
+
+                # Parse company name from title: "10-K - Company Name (CIK) (Filer)"
+                company_name = ""
+                name_match = re.match(r"[\w\-/]+ - (.+?)\s*\(\d+\)", title)
+                if name_match:
+                    company_name = name_match.group(1).strip()
+
+                filings.append(
+                    {
+                        "cik": cik,
+                        "accession_number": accession,
+                        "form_type": form,
+                        "filing_date": filing_date,
+                        "company_name": company_name,
+                        "url": url,
+                    }
+                )
+            except Exception as e:
+                logger.debug(f"Failed to parse feed entry: {e}")
+                continue
+
+        return filings

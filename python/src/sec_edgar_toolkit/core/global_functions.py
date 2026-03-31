@@ -201,10 +201,19 @@ def get_filings(
                 if limit and len(filings) >= limit:
                     break
     else:
-        # Global filings search would require significant additional work
-        # For now, return empty list if no company specified
-        logger.warning(
-            "Global filings search without company filter not yet implemented"
-        )
+        # Global recent filings via SEC EDGAR Atom feed
+        recent = api.get_recent_filings(form_type=form_types or None, limit=limit or 40)
+        for entry in recent:
+            filing = Filing(
+                cik=entry.get("cik", ""),
+                accession_number=entry.get("accession_number", ""),
+                form_type=entry.get("form_type", ""),
+                filing_date=entry.get("filing_date", ""),
+                api=api,
+                company_name=entry.get("company_name", ""),
+            )
+            filings.append(filing)
+            if limit and len(filings) >= limit:
+                break
 
     return filings[:limit] if limit else filings

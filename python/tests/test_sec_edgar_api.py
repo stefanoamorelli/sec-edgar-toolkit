@@ -494,7 +494,7 @@ class TestSecEdgarApi:
         """Test rate limiting functionality."""
         api_client.http_client.rate_limit_delay = 0.1
 
-        with patch.object(api_client.http_client.session, 'get') as mock_get:
+        with patch.object(api_client.http_client.session, "get") as mock_get:
             mock_get.return_value.json.return_value = {"data": []}
             mock_get.return_value.status_code = 200
 
@@ -570,7 +570,8 @@ class TestSecEdgarApi:
     @responses.activate
     def test_error_handling_timeout(self, api_client: SecEdgarApi) -> None:
         """Test handling of timeout errors."""
-        def timeout_callback(request):
+
+        def timeout_callback(_request):
             raise Timeout("Request timed out")
 
         responses.add_callback(
@@ -584,7 +585,10 @@ class TestSecEdgarApi:
 
     def test_session_headers(self, api_client: SecEdgarApi) -> None:
         """Test that session headers are properly set."""
-        assert api_client.http_client.session.headers["User-Agent"] == api_client.http_client.user_agent
+        assert (
+            api_client.http_client.session.headers["User-Agent"]
+            == api_client.http_client.user_agent
+        )
         assert api_client.http_client.session.headers["Accept"] == "application/json"
         assert "gzip" in api_client.http_client.session.headers["Accept-Encoding"]
 
@@ -595,7 +599,9 @@ class TestSecEdgarApi:
         result = FilingFilter.filter_filings({}, None, None, None)
         assert result == {}
 
-        result = FilingFilter.filter_filings({"accessionNumber": []}, "10-K", None, None)
+        result = FilingFilter.filter_filings(
+            {"accessionNumber": []}, "10-K", None, None
+        )
         assert result == {"accessionNumber": []}
 
     def test_filter_filings_by_form_type(self, api_client: SecEdgarApi) -> None:
@@ -676,4 +682,3 @@ class TestTypeDefinitions:
             "exchange": None,
         }
         assert ticker["exchange"] is None
-

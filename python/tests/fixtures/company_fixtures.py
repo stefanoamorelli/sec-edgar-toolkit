@@ -18,7 +18,7 @@ def mock_company_tickers() -> Dict[str, Any]:
             [320193, "Apple Inc.", "AAPL", "Nasdaq"],
             [789019, "MICROSOFT CORP", "MSFT", "Nasdaq"],
             [1559720, "Alphabet Inc.", "GOOGL", "Nasdaq"],
-        ]
+        ],
     }
 
 
@@ -88,7 +88,11 @@ def mock_company_submissions() -> CompanySubmissions:
                 "size": [4904320, 4826946, 42935364],
                 "isXBRL": [True, True, True],
                 "isInlineXBRL": [True, True, True],
-                "primaryDocument": ["aapl-20230701.htm", "aapl-20230401.htm", "aapl-20221231.htm"],
+                "primaryDocument": [
+                    "aapl-20230701.htm",
+                    "aapl-20230401.htm",
+                    "aapl-20221231.htm",
+                ],
                 "primaryDocDescription": [
                     "10-Q",
                     "10-Q",
