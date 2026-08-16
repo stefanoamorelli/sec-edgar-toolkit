@@ -66,6 +66,10 @@ export class OwnershipTransaction {
     this.totalValue = total;
     this.transactionAmount = total;
   }
+
+  toObject(): Record<string, unknown> {
+    return { ...(this as unknown as Record<string, unknown>) };
+  }
 }
 
 export class OwnershipHolding {
@@ -80,6 +84,10 @@ export class OwnershipHolding {
     this.ownershipType = data.directOrIndirectOwnership || null;
     this.ownershipNature =
       data.natureOfOwnership || data.directOrIndirectOwnership || null;
+  }
+
+  toObject(): Record<string, unknown> {
+    return { ...(this as unknown as Record<string, unknown>) };
   }
 }
 

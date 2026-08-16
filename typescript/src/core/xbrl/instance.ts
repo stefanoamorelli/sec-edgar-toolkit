@@ -21,7 +21,13 @@ import {
   IncomeStatementItem,
   CashFlowItem,
 } from "../../types/xbrl";
-import { buildFactRecords, factsHistory, FactHistoryRow } from "./queries";
+import {
+  buildFactRecords,
+  factsHistory,
+  parseFilterExpression,
+  FactHistoryRow,
+  FactQuery,
+} from "./queries";
 import { RenderedReportReader, ReportDescriptor } from "./rendered-reports";
 import { StatementLineItem } from "./report-html-parser";
 import { STATEMENT_CONCEPTS, normalizeStatementType } from "./statements";
@@ -114,9 +120,17 @@ export class XBRLInstance {
   }
 
   /**
-   * Query XBRL facts with filtering
+   * Query XBRL facts with filtering.
+   *
+   * Accepts an options object (`{ concept: 'Assets', unit: 'USD' }`) or a
+   * filter expression string (`"concept=Assets&unit=USD"`; the empty
+   * string selects everything). Returns a FactQuery (an array with a
+   * chainable `byConcept()` helper).
    */
-  async query(options: XbrlQueryOptions = {}): Promise<XbrlFact[]> {
+  async query(options: XbrlQueryOptions | string = {}): Promise<FactQuery> {
+    if (typeof options === "string") {
+      options = options === "" ? {} : parseFilterExpression(options);
+    }
     const { concept, taxonomy = "us-gaap", unit, period } = options;
 
     const results: XbrlFact[] = [];
@@ -152,7 +166,7 @@ export class XBRLInstance {
       }
     }
 
-    return results;
+    return FactQuery.fromRecords(results);
   }
 
   /** History of one concept, sorted by period end ascending. */

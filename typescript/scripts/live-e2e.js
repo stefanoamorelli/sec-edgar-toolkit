@@ -164,6 +164,13 @@ async function main() {
     'query record fields',
     assetsFacts[0].context !== undefined || assetsFacts[0].period_instant !== undefined
   );
+  const exprQuery = await xbrl.query('concept=Assets&unit=USD');
+  check("query('concept=X') string form", exprQuery.length > 0, `n=${exprQuery.length}`);
+  const all = await xbrl.query('');
+  check("query('').byConcept", all.byConcept('NetIncomeLoss').length > 0);
+  check('filing aliases', latest10K.form === '10-K' && latest10K.date === latest10K.filingDate && latest10K.company === latest10K.companyName);
+  const rawFacts = await apple.getCompanyFacts();
+  check('getCompanyFacts raw', Boolean(rawFacts.facts));
   const history = await xbrl.factsHistory('Assets');
   check('factsHistory', history.length > 0, `rows=${history.length}`);
 

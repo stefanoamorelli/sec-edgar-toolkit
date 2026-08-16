@@ -31,3 +31,7 @@ class Filings(list):
         if form is None:
             return Filings(self)
         return Filings(f for f in self if getattr(f, "form_type", None) == form)
+
+    def filter_by_form(self, form: str) -> "Filings":
+        """Alias of :meth:`filter` (matches the TypeScript API)."""
+        return self.filter(form)

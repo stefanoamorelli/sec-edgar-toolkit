@@ -109,6 +109,19 @@ export class EdgarClient {
     return this.filings.getFiling(cik, accessionNumber);
   }
 
+  async getCompanySubmissionsPage(pageName: string): Promise<Record<string, any>> {
+    return this.filings.getCompanySubmissionsPage(pageName);
+  }
+
+  async getRecentFilings(
+    formType?: string | string[],
+    limit: number = 40,
+    owner: 'include' | 'exclude' | 'only' = 'include',
+    start: number = 0
+  ): Promise<import('../endpoints/filings').RecentFilingEntry[]> {
+    return this.filings.getRecentFilings(formType, limit, owner, start);
+  }
+
   // XBRL methods
   async getCompanyFacts(cik: string | number): Promise<Record<string, any>> {
     return this.xbrl.getCompanyFacts(cik);

@@ -76,6 +76,26 @@ export class Filing {
     this.url = `${this.archiveBase}/${this.accessionNumber}-index.htm`;
   }
 
+  /** Alias of `filingDate`. */
+  get date(): string {
+    return this.filingDate;
+  }
+
+  /** Alias of `formType`. */
+  get form(): string {
+    return this.formType;
+  }
+
+  /** Alias of `companyName`. */
+  get company(): string {
+    return this.companyName;
+  }
+
+  /** Alias of `acceptanceDatetime`. */
+  get acceptedDate(): string {
+    return this.acceptanceDatetime;
+  }
+
   get archiveBase(): string {
     const accessionClean = this.accessionNumber.replace(/-/g, "");
     return `${ARCHIVES_BASE}/${parseInt(this.cik, 10)}/${accessionClean}`;
@@ -302,6 +322,11 @@ export class Filing {
       }
     }
     return result;
+  }
+
+  /** All extracted items from the filing (alias of `extractItems()`). */
+  async items(): Promise<Record<string, string>> {
+    return this.extractItems();
   }
 
   /**

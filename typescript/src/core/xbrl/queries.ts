@@ -7,6 +7,48 @@
 
 import { XbrlFact } from "../../types/xbrl";
 
+/** Query result: an array of fact records with chainable helpers. */
+export class FactQuery extends Array<XbrlFact> {
+  static get [Symbol.species](): ArrayConstructor {
+    return Array;
+  }
+
+  static fromRecords(records: Iterable<XbrlFact>): FactQuery {
+    const query = new FactQuery();
+    for (const record of records) {
+      query.push(record);
+    }
+    return query;
+  }
+
+  /** Narrow the results to a single concept name (substring match). */
+  byConcept(concept: string): FactQuery {
+    const needle = concept.toLowerCase();
+    return FactQuery.fromRecords(
+      this.filter((record) => String(record.concept || "").toLowerCase().includes(needle)),
+    );
+  }
+}
+
+export interface ParsedFilterExpression {
+  concept?: string;
+  taxonomy?: string;
+  unit?: string;
+  period?: string;
+}
+
+/** Parse a "concept=Assets&unit=USD" filter expression. */
+export function parseFilterExpression(expression: string): ParsedFilterExpression {
+  const parsed: Record<string, string> = {};
+  for (const part of expression.split("&")) {
+    const eq = part.indexOf("=");
+    if (eq > 0) {
+      parsed[part.slice(0, eq).trim()] = part.slice(eq + 1).trim();
+    }
+  }
+  return parsed;
+}
+
 /** Normalize one concept's raw company-facts entries into fact records. */
 export function buildFactRecords(
   conceptName: string,

@@ -3,7 +3,13 @@
  */
 
 export { XBRLInstance, XbrlFilingLike, XbrlApiLike } from "./instance";
-export { buildFactRecords, factsHistory, FactHistoryRow } from "./queries";
+export {
+  buildFactRecords,
+  factsHistory,
+  parseFilterExpression,
+  FactHistoryRow,
+  FactQuery,
+} from "./queries";
 export { RenderedReportReader, ReportDescriptor } from "./rendered-reports";
 export {
   parseReportHtml,

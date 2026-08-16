@@ -250,6 +250,11 @@ export class Company {
     return this.factsCache;
   }
 
+  /** The raw XBRL company-facts payload. */
+  async getCompanyFacts(): Promise<Record<string, any>> {
+    return (await this.getFacts()).raw;
+  }
+
   /** Annual financial statements (from 10-K facts). */
   async getFinancials(): Promise<Financials> {
     const facts = await this.getFacts();
