@@ -289,7 +289,7 @@ docker-compose up typescript-prod python-prod
 
 ## Acknowledgements and Related Tools
 
-This project was inspired by and builds upon the excellent work of the SEC EDGAR community. The object API (`Company`, `Filing.obj()`, typed form items) was originally inspired by [edgartools](https://github.com/dgunning/edgartools). Special thanks to the maintainers and contributors of these projects that have paved the way for accessible financial data:
+This project was inspired by and builds upon the excellent work of the SEC EDGAR community. Some of the API of this SDK was originally inspired by [edgartools](https://github.com/dgunning/edgartools). Special thanks to the maintainers and contributors of these projects that have paved the way for accessible financial data:
 
 <details>
 <summary><strong>Python</strong></summary>
