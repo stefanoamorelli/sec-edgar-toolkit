@@ -76,13 +76,29 @@ export interface DerivativeTransaction {
   underlyingSecurity?: UnderlyingSecurity;
 }
 
+export interface DerivativeHolding {
+  securityTitle: string;
+  conversionOrExercisePrice: number;
+  exerciseDate: Date | null;
+  expirationDate: Date | null;
+  shares: number;
+  directOrIndirectOwnership: string;
+  natureOfOwnership: string;
+  underlyingSecurity: UnderlyingSecurity;
+}
+
 export interface ParsedOwnershipForm {
   documentInfo: DocumentInfo;
   issuerInfo: IssuerInfo;
   reportingOwnerInfo: ReportingOwnerInfo;
+  /** Every reporting owner; joint filings name several. */
+  reportingOwners?: ReportingOwnerInfo[];
   nonDerivativeTransactions: NonDerivativeTransaction[];
   nonDerivativeHoldings: NonDerivativeHolding[];
   derivativeTransactions: DerivativeTransaction[];
+  derivativeHoldings?: Array<Record<string, any>>;
+  /** footnote id ("F1", ...) -> text */
+  footnotes?: Record<string, string>;
 }
 
 export class OwnershipFormParseError extends Error {

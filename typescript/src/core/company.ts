@@ -25,6 +25,8 @@ export interface GetFilingsOptions {
    * filings (one extra request per page).
    */
   deep?: boolean;
+  /** Also match amended variants of the requested forms ("10-K/A"). */
+  amendments?: boolean;
 }
 
 export class Company {
@@ -152,7 +154,7 @@ export class Company {
 
   /** Filings for this company, newest first. */
   async getFilings(options: GetFilingsOptions = {}): Promise<Filings> {
-    const { form, since, before, limit, deep } = options;
+    const { form, since, before, limit, deep, amendments } = options;
 
     const submissions = (await this.api.getCompanySubmissions(this.cik, {
       fromDate: since,
@@ -161,6 +163,13 @@ export class Company {
 
     const formTypes: string[] =
       form == null ? [] : Array.isArray(form) ? [...form] : [form];
+    if (amendments) {
+      for (const formType of [...formTypes]) {
+        if (!formType.endsWith("/A")) {
+          formTypes.push(`${formType}/A`);
+        }
+      }
+    }
 
     const filings = new Filings();
     const filingsData = submissions.filings || {};

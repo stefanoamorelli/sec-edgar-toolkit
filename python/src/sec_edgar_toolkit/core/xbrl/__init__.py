@@ -1,6 +1,9 @@
 """XBRL access for one filing: fact queries and rendered-report statements."""
 
+from .as_reported import AsReportedStatements
 from .instance import XBRLInstance
+from .instance_document import Context, InstanceDocument, InstanceFact
+from .linkbases import LabelLinkbase, PresentationLinkbase, PresentationNode
 from .queries import FactQuery, FactsData
 from .rendered_reports import RenderedReportReader
 from .report_html import (
@@ -12,6 +15,13 @@ from .statements import STATEMENT_CONCEPTS, normalize_statement_type
 
 __all__ = [
     "XBRLInstance",
+    "AsReportedStatements",
+    "InstanceDocument",
+    "InstanceFact",
+    "Context",
+    "PresentationLinkbase",
+    "PresentationNode",
+    "LabelLinkbase",
     "FactQuery",
     "FactsData",
     "RenderedReportReader",

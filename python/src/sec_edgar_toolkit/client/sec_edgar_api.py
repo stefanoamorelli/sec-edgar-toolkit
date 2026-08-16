@@ -35,7 +35,12 @@ import logging
 import os
 from typing import Any, Dict, List, Optional, Union
 
-from ..endpoints import CompanyEndpoints, FilingsEndpoints, XbrlEndpoints
+from ..endpoints import (
+    CompanyEndpoints,
+    FilingsEndpoints,
+    FullTextSearchEndpoints,
+    XbrlEndpoints,
+)
 from ..types import CompanyTicker
 from ..utils import HttpClient
 
@@ -79,6 +84,8 @@ class SecEdgarApi:
         rate_limit_delay: float = 0.1,
         max_retries: int = 3,
         timeout: int = 30,
+        cache_dir: Optional[str] = None,
+        cache_ttl: int = 21600,
     ) -> None:
         """
         Initialize SEC EDGAR API client.
@@ -89,6 +96,11 @@ class SecEdgarApi:
             rate_limit_delay: Minimum delay between requests in seconds
             max_retries: Maximum number of retry attempts for failed requests
             timeout: Request timeout in seconds
+            cache_dir: Directory for the on-disk response cache. Archive
+                content is cached indefinitely, API responses for
+                cache_ttl seconds. Falls back to the
+                SEC_EDGAR_TOOLKIT_CACHE_DIR environment variable.
+            cache_ttl: Time-to-live in seconds for cached API responses
 
         Raises:
             ValueError: If user_agent is empty or doesn't contain contact info
@@ -120,12 +132,15 @@ class SecEdgarApi:
             rate_limit_delay=rate_limit_delay,
             max_retries=max_retries,
             timeout=timeout,
+            cache_dir=cache_dir,
+            cache_ttl=cache_ttl,
         )
 
         # Initialize endpoint modules
         self.company = CompanyEndpoints(self.http_client)
         self.filings = FilingsEndpoints(self.http_client)
         self.xbrl = XbrlEndpoints(self.http_client)
+        self.fulltext = FullTextSearchEndpoints(self.http_client)
 
         logger.info(f"SEC EDGAR API client initialized with User-Agent: {user_agent}")
 
@@ -181,6 +196,25 @@ class SecEdgarApi:
     ) -> Dict[str, Any]:
         """Get specific XBRL concept data for a company."""
         return self.xbrl.get_company_concept(cik, taxonomy, tag, unit)
+
+    def full_text_search(
+        self,
+        query: str,
+        forms: Optional[Union[str, list]] = None,
+        start_date: Optional[str] = None,
+        end_date: Optional[str] = None,
+        cik: Optional[Union[str, int]] = None,
+        offset: int = 0,
+    ) -> Dict[str, Any]:
+        """Search the full text of filings (EDGAR full-text search)."""
+        return self.fulltext.search(
+            query,
+            forms=forms,
+            start_date=start_date,
+            end_date=end_date,
+            cik=cik,
+            offset=offset,
+        )
 
     def get_company_submissions_page(self, page_name: str) -> Dict[str, Any]:
         """Fetch one older-history submissions page (from ``filings.files``)."""

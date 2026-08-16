@@ -163,6 +163,40 @@ export class ItemExtractor {
     { number: "9.01", title: "Financial Statements and Exhibits" },
   ];
 
+  private static readonly FORM_20F_ITEMS: ItemDefinition[] = [
+    {
+      number: "1",
+      title: "Identity of Directors, Senior Management and Advisers",
+    },
+    { number: "2", title: "Offer Statistics and Expected Timetable" },
+    { number: "3", title: "Key Information" },
+    { number: "4", title: "Information on the Company" },
+    { number: "4A", title: "Unresolved Staff Comments", required: false },
+    { number: "5", title: "Operating and Financial Review and Prospects" },
+    { number: "6", title: "Directors, Senior Management and Employees" },
+    { number: "7", title: "Major Shareholders and Related Party Transactions" },
+    { number: "8", title: "Financial Information" },
+    { number: "9", title: "The Offer and Listing" },
+    { number: "10", title: "Additional Information" },
+    {
+      number: "11",
+      title: "Quantitative and Qualitative Disclosures About Market Risk",
+    },
+    {
+      number: "12",
+      title: "Description of Securities Other than Equity Securities",
+    },
+    { number: "13", title: "Defaults, Dividend Arrearages and Delinquencies" },
+    {
+      number: "14",
+      title: "Material Modifications to the Rights of Security Holders",
+    },
+    { number: "15", title: "Controls and Procedures" },
+    { number: "17", title: "Financial Statements" },
+    { number: "18", title: "Financial Statements" },
+    { number: "19", title: "Exhibits" },
+  ];
+
   private readonly formItems: Map<FormType, ItemDefinition[]>;
 
   constructor() {
@@ -170,6 +204,7 @@ export class ItemExtractor {
       [FormType.FORM_10K, ItemExtractor.FORM_10K_ITEMS],
       [FormType.FORM_10Q, ItemExtractor.FORM_10Q_ITEMS],
       [FormType.FORM_8K, ItemExtractor.FORM_8K_ITEMS],
+      [FormType.FORM_20F, ItemExtractor.FORM_20F_ITEMS],
     ]);
   }
 

@@ -199,8 +199,53 @@ FORM_8K_ITEMS = [
 ]
 
 
+class TwentyFItem(str, Enum):
+    """20-F items by name (foreign private issuer annual report)."""
+
+    KEY_INFORMATION = "3"
+    INFORMATION_ON_THE_COMPANY = "4"
+    UNRESOLVED_STAFF_COMMENTS = "4A"
+    OPERATING_AND_FINANCIAL_REVIEW = "5"
+    DIRECTORS_AND_EMPLOYEES = "6"
+    MAJOR_SHAREHOLDERS_AND_RELATED_PARTIES = "7"
+    FINANCIAL_INFORMATION = "8"
+    THE_OFFER_AND_LISTING = "9"
+    ADDITIONAL_INFORMATION = "10"
+    MARKET_RISK_DISCLOSURES = "11"
+    CONTROLS_AND_PROCEDURES = "15"
+    EXHIBITS = "19"
+
+    def __str__(self) -> str:
+        return self.value
+
+
+FORM_20F_ITEMS = [
+    ItemDefinition("1", "Identity of Directors, Senior Management and Advisers"),
+    ItemDefinition("2", "Offer Statistics and Expected Timetable"),
+    ItemDefinition("3", "Key Information"),
+    ItemDefinition("4", "Information on the Company"),
+    ItemDefinition("4A", "Unresolved Staff Comments", required=False),
+    ItemDefinition("5", "Operating and Financial Review and Prospects"),
+    ItemDefinition("6", "Directors, Senior Management and Employees"),
+    ItemDefinition("7", "Major Shareholders and Related Party Transactions"),
+    ItemDefinition("8", "Financial Information"),
+    ItemDefinition("9", "The Offer and Listing"),
+    ItemDefinition("10", "Additional Information"),
+    ItemDefinition("11", "Quantitative and Qualitative Disclosures About Market Risk"),
+    ItemDefinition("12", "Description of Securities Other than Equity Securities"),
+    ItemDefinition("13", "Defaults, Dividend Arrearages and Delinquencies"),
+    ItemDefinition("14", "Material Modifications to the Rights of Security Holders"),
+    ItemDefinition("15", "Controls and Procedures"),
+    ItemDefinition("16", "Reserved", required=False),
+    ItemDefinition("17", "Financial Statements"),
+    ItemDefinition("18", "Financial Statements"),
+    ItemDefinition("19", "Exhibits"),
+]
+
+
 FORM_ITEM_DEFINITIONS = {
     FormType.FORM_10K: FORM_10K_ITEMS,
     FormType.FORM_10Q: FORM_10Q_ITEMS,
     FormType.FORM_8K: FORM_8K_ITEMS,
+    FormType.FORM_20F: FORM_20F_ITEMS,
 }

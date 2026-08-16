@@ -66,5 +66,21 @@ export enum EightKItem {
   FINANCIAL_STATEMENTS_AND_EXHIBITS = "9.01",
 }
 
+/** 20-F items by name (foreign private issuer annual report). */
+export enum TwentyFItem {
+  KEY_INFORMATION = "3",
+  INFORMATION_ON_THE_COMPANY = "4",
+  UNRESOLVED_STAFF_COMMENTS = "4A",
+  OPERATING_AND_FINANCIAL_REVIEW = "5",
+  DIRECTORS_AND_EMPLOYEES = "6",
+  MAJOR_SHAREHOLDERS_AND_RELATED_PARTIES = "7",
+  FINANCIAL_INFORMATION = "8",
+  THE_OFFER_AND_LISTING = "9",
+  ADDITIONAL_INFORMATION = "10",
+  MARKET_RISK_DISCLOSURES = "11",
+  CONTROLS_AND_PROCEDURES = "15",
+  EXHIBITS = "19",
+}
+
 /** Any of the typed item identifiers accepted alongside plain strings. */
-export type FilingItem = TenKItem | TenQItem | EightKItem;
+export type FilingItem = TenKItem | TenQItem | EightKItem | TwentyFItem;

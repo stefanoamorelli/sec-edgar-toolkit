@@ -49,12 +49,20 @@ The SEC EDGAR Toolkit provides easy-to-use libraries for both TypeScript/JavaScr
 | Async Support | ✅ Promise-based | ✅ async/await |
 | Error Handling | ✅ Typed exceptions | ✅ Typed exceptions |
 | User Agent | ✅ Required | ✅ Required |
+| As-reported statements (instance document + presentation linkbases) | ✅ | ✅ |
+| Dimensional XBRL (segments, products, geography) | ✅ | ✅ |
 | Filing-scoped statements (FilingSummary/R-files, incl. segments) | ✅ | ✅ |
+| Full-text search (efts.sec.gov, 2001+) | ✅ | ✅ |
+| 13F institutional holdings parsing | ✅ | ✅ |
+| Typed exhibit metadata (EX-99.1, ...) | ✅ | ✅ |
+| Multiple reporting owners + footnotes on Forms 3/4/5 | ✅ | ✅ |
+| Foreign private issuers (20-F items, IFRS statements) | ✅ | ✅ |
+| Amendment-aware filing lookups | ✅ | ✅ |
 | Form objects (OwnershipForm, EightK, TenK, TenQ) | ✅ | ✅ |
 | Typed item enums (TenKItem, TenQItem, EightKItem) | ✅ | ✅ |
 | Global recent-filings feed | ✅ | ✅ |
 | Deep filing-history pagination | ✅ | ✅ |
-| Caching | ✅ In-memory LRU + TTL | ✅ 24-hour ticker cache |
+| Caching | ✅ In-memory LRU + on-disk (opt-in) | ✅ On-disk (opt-in) + 24-hour ticker cache |
 
 ## Installation
 

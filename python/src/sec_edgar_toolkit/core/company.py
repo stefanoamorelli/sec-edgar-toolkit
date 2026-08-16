@@ -164,6 +164,7 @@ class Company:
         before: Optional[str] = None,
         limit: Optional[int] = None,
         deep: bool = False,
+        amendments: bool = False,
     ) -> Filings:
         """
         Get filings for this company, newest first.
@@ -175,6 +176,8 @@ class Company:
             limit: Maximum number of filings to return
             deep: Also walk the older-history pages beyond the ~1000 most
                 recent filings (one extra request per page)
+            amendments: Also match amended variants of the requested
+                forms ("10-K/A" for "10-K")
 
         Returns:
             Filings collection (list-like, with ``.latest()``)
@@ -191,6 +194,12 @@ class Company:
         form_types: List[str] = []
         if form:
             form_types = [form] if isinstance(form, str) else list(form)
+        if amendments:
+            form_types += [
+                f"{form_type}/A"
+                for form_type in form_types
+                if not form_type.endswith("/A")
+            ]
 
         filings = Filings()
         filings_data = submissions.get("filings", {})

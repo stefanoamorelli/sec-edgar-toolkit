@@ -59,6 +59,10 @@ export class Filing {
   private xbrlInstance: XBRLInstance | null = null;
   private extractedItems: Record<string, string> | null = null;
   private attachmentList: Attachment[] | null = null;
+  private typedDocuments: Record<
+    string,
+    import("./exhibits").FilingIndexRecord
+  > | null = null;
   private readonly itemExtractor = new ItemExtractor();
 
   constructor(props: FilingProps) {
@@ -118,22 +122,64 @@ export class Filing {
     return Array.isArray(items) ? items : [];
   }
 
-  /** All documents in the filing's archive folder. */
+  private async documentTypes(): Promise<
+    Record<string, import("./exhibits").FilingIndexRecord>
+  > {
+    if (this.typedDocuments === null) {
+      const { parseFilingIndexHtml } = await import("./exhibits");
+      this.typedDocuments = {};
+      for (const name of [
+        `${this.accessionNumber}-index.html`,
+        `${this.accessionNumber}-index.htm`,
+      ]) {
+        try {
+          const html = await this.api.httpClient.getRaw(
+            `${this.archiveBase}/${name}`,
+          );
+          for (const record of parseFilingIndexHtml(html)) {
+            this.typedDocuments[record.document] = record;
+          }
+          break;
+        } catch {
+          continue;
+        }
+      }
+    }
+    return this.typedDocuments;
+  }
+
+  /**
+   * All documents in the filing's archive folder, typed from the filing
+   * index page ("10-K", "EX-99.1", "GRAPHIC", ...).
+   */
   async getAttachments(): Promise<Attachment[]> {
     if (this.attachmentList === null) {
       const items = await this.directoryItems();
+      const typed = await this.documentTypes();
       this.attachmentList = items
         .filter((item) => item.name && !String(item.name).endsWith("/"))
-        .map(
-          (item) =>
-            new Attachment(
-              item.name,
-              `${this.archiveBase}/${item.name}`,
-              item.size ? Number(item.size) : undefined,
-            ),
-        );
+        .map((item) => {
+          const record = typed[item.name] || {
+            type: "",
+            description: "",
+            sequence: "",
+          };
+          return new Attachment(
+            item.name,
+            `${this.archiveBase}/${item.name}`,
+            item.size ? Number(item.size) : undefined,
+            record.type,
+            record.description,
+            record.sequence,
+          );
+        });
     }
     return this.attachmentList;
+  }
+
+  /** The filing's exhibits (documents typed EX-*). */
+  async getExhibits(): Promise<Attachment[]> {
+    return (await this.getAttachments()).filter((a) => a.isExhibit);
   }
 
   private async pickMainDocument(): Promise<string> {
@@ -248,6 +294,10 @@ export class Filing {
         }
         const parser = new OwnershipFormParser(xml);
         return new OwnershipForm(parser.parseAll());
+      }
+      if (this.formType.startsWith("13F")) {
+        const { ThirteenF } = await import("./form-13f");
+        return await ThirteenF.fromFiling(this);
       }
       if (this.formType === "8-K" || this.formType === "8-K/A") {
         return await EightK.create(this);

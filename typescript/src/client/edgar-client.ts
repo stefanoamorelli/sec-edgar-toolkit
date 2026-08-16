@@ -24,6 +24,11 @@ import {
   XbrlEndpoints,
 } from "../endpoints";
 import {
+  FullTextSearchEndpoints,
+  FullTextSearchOptions,
+  FullTextSearchResults,
+} from "../endpoints/fulltext";
+import {
   CompanyTicker,
   CompanySubmissions,
   EdgarClientConfig,
@@ -39,6 +44,7 @@ export class EdgarClient {
   public company: CompanyEndpoints;
   public filings: FilingsEndpoints;
   public xbrl: XbrlEndpoints;
+  public fulltext: FullTextSearchEndpoints;
 
   constructor(config: EdgarClientConfig = {}) {
     // Get user agent from config or environment variable
@@ -58,6 +64,8 @@ export class EdgarClient {
       rateLimitDelay: config.rateLimitDelay,
       maxRetries: config.maxRetries,
       timeout: config.timeout,
+      diskCacheDir: (config as Record<string, any>).diskCacheDir,
+      diskCacheTtl: (config as Record<string, any>).diskCacheTtl,
       cache:
         config.cache !== false
           ? {
@@ -71,6 +79,7 @@ export class EdgarClient {
     this.company = new CompanyEndpoints(this.httpClient);
     this.filings = new FilingsEndpoints(this.httpClient);
     this.xbrl = new XbrlEndpoints(this.httpClient);
+    this.fulltext = new FullTextSearchEndpoints(this.httpClient);
   }
 
   // Convenience methods that delegate to endpoint modules
@@ -109,17 +118,27 @@ export class EdgarClient {
     return this.filings.getFiling(cik, accessionNumber);
   }
 
-  async getCompanySubmissionsPage(pageName: string): Promise<Record<string, any>> {
+  async getCompanySubmissionsPage(
+    pageName: string,
+  ): Promise<Record<string, any>> {
     return this.filings.getCompanySubmissionsPage(pageName);
   }
 
   async getRecentFilings(
     formType?: string | string[],
     limit: number = 40,
-    owner: 'include' | 'exclude' | 'only' = 'include',
-    start: number = 0
-  ): Promise<import('../endpoints/filings').RecentFilingEntry[]> {
+    owner: "include" | "exclude" | "only" = "include",
+    start: number = 0,
+  ): Promise<import("../endpoints/filings").RecentFilingEntry[]> {
     return this.filings.getRecentFilings(formType, limit, owner, start);
+  }
+
+  /** Search the full text of filings (EDGAR full-text search). */
+  async fullTextSearch(
+    query: string,
+    options: FullTextSearchOptions = {},
+  ): Promise<FullTextSearchResults> {
+    return this.fulltext.search(query, options);
   }
 
   // XBRL methods
