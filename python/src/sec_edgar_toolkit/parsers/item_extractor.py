@@ -29,6 +29,12 @@ class ItemDefinition:
     title: str
     aliases: List[str] = field(default_factory=list)
     required: bool = True
+    # Result-dict key when the plain item number is ambiguous within a form
+    # (10-Q Part I and Part II reuse the same item numbers).
+    key: str = ""
+
+    def result_key(self) -> str:
+        return self.key or self.number
 
 
 @dataclass
@@ -75,7 +81,8 @@ class ItemExtractor:
         ItemDefinition("15", "Exhibits and Financial Statement Schedules"),
     ]
 
-    # 10-Q Item definitions
+    # 10-Q Item definitions. Part I and Part II reuse the same item numbers,
+    # so Part II entries carry a distinct result key ("II-<n>").
     FORM_10Q_ITEMS = [
         ItemDefinition("1", "Financial Statements"),
         ItemDefinition("2", "Management's Discussion and Analysis", aliases=["MD&A"]),
@@ -83,19 +90,33 @@ class ItemExtractor:
             "3", "Quantitative and Qualitative Disclosures About Market Risk"
         ),
         ItemDefinition("4", "Controls and Procedures"),
-        ItemDefinition("1", "Legal Proceedings", aliases=["Part II, Item 1"]),
-        ItemDefinition("1A", "Risk Factors", aliases=["Part II, Item 1A"]),
         ItemDefinition(
-            "2", "Unregistered Sales of Equity Securities", aliases=["Part II, Item 2"]
+            "1", "Legal Proceedings", aliases=["Part II, Item 1"], key="II-1"
+        ),
+        ItemDefinition("1A", "Risk Factors", aliases=["Part II, Item 1A"], key="II-1A"),
+        ItemDefinition(
+            "2",
+            "Unregistered Sales of Equity Securities",
+            aliases=["Part II, Item 2"],
+            key="II-2",
         ),
         ItemDefinition(
-            "3", "Defaults Upon Senior Securities", aliases=["Part II, Item 3"]
+            "3",
+            "Defaults Upon Senior Securities",
+            aliases=["Part II, Item 3"],
+            key="II-3",
         ),
         ItemDefinition(
-            "4", "Mine Safety Disclosures", aliases=["Part II, Item 4"], required=False
+            "4",
+            "Mine Safety Disclosures",
+            aliases=["Part II, Item 4"],
+            required=False,
+            key="II-4",
         ),
-        ItemDefinition("5", "Other Information", aliases=["Part II, Item 5"]),
-        ItemDefinition("6", "Exhibits", aliases=["Part II, Item 6"]),
+        ItemDefinition(
+            "5", "Other Information", aliases=["Part II, Item 5"], key="II-5"
+        ),
+        ItemDefinition("6", "Exhibits", aliases=["Part II, Item 6"], key="II-6"),
     ]
 
     # 8-K Item definitions (most common items)
@@ -270,25 +291,32 @@ class ItemExtractor:
                 )
 
                 if matches:
-                    # Use the first match after TOC (if TOC exists)
-                    match = matches[0]
-                    if len(matches) > 1 and toc_items:
-                        # Skip matches that appear in TOC
-                        for m in matches[1:]:
-                            if not self._is_in_toc(m.start(), toc_items):
-                                match = m
-                                break
+                    # The same heading occurs in the table of contents, the
+                    # cover page, and the body; the body occurrence is the
+                    # one followed by real content, so pick the match with
+                    # the longest span to the next item heading.
+                    best: Tuple[int, int] = (-1, -1)  # (length, start)
+                    for m in matches:
+                        if toc_items and self._is_in_toc(m.start(), toc_items):
+                            continue
+                        end = self._find_item_end(content, m.start(), item_definitions)
+                        length = end - m.start()
+                        if length > best[0]:
+                            best = (length, m.start())
+                    if best[1] < 0:
+                        end = self._find_item_end(
+                            content, matches[0].start(), item_definitions
+                        )
+                        best = (end - matches[0].start(), matches[0].start())
 
-                    start_pos = match.start()
-
-                    # Find the end position (start of next item)
-                    end_pos = self._find_item_end(content, start_pos, item_definitions)
+                    start_pos = best[1]
+                    end_pos = start_pos + best[0]
 
                     # Extract content
                     item_content = content[start_pos:end_pos].strip()
 
-                    items[item_def.number] = ExtractedItem(
-                        item_number=item_def.number,
+                    items[item_def.result_key()] = ExtractedItem(
+                        item_number=item_def.result_key(),
                         title=item_def.title,
                         content=item_content,
                         start_position=start_pos,

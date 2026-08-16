@@ -296,7 +296,7 @@ class FinancialFormParser:
     ) -> List[BalanceSheetItem]:
         """Extract balance sheet items matching the pattern."""
         items: List[BalanceSheetItem] = []
-        regex = re.compile(pattern + r".*?\$([\\d,]+)", re.IGNORECASE)
+        regex = re.compile(pattern + r".{0,300}?\$([\d,]+)", re.IGNORECASE)
 
         for match in regex.finditer(section):
             label = match.group(0).split("$")[0].strip()
@@ -324,7 +324,7 @@ class FinancialFormParser:
     ) -> List[IncomeStatementItem]:
         """Extract income statement items matching the pattern."""
         items: List[IncomeStatementItem] = []
-        regex = re.compile(pattern + r".*?\$([\\d,]+)", re.IGNORECASE)
+        regex = re.compile(pattern + r".{0,300}?\$([\d,]+)", re.IGNORECASE)
 
         for match in regex.finditer(section):
             label = match.group(0).split("$")[0].strip()
@@ -352,7 +352,7 @@ class FinancialFormParser:
     ) -> List[CashFlowItem]:
         """Extract cash flow items matching the pattern."""
         items: List[CashFlowItem] = []
-        regex = re.compile(pattern + r".*?\$([\\d,]+)", re.IGNORECASE)
+        regex = re.compile(pattern + r".{0,300}?\$([\d,]+)", re.IGNORECASE)
 
         for match in regex.finditer(section):
             label = match.group(0).split("$")[0].strip()

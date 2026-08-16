@@ -34,6 +34,7 @@ class FilingsEndpoints:
     """
 
     DATA_URL = "https://data.sec.gov/"
+    ARCHIVES_URL = "https://www.sec.gov/"
     CURRENT_FILINGS_URL = "https://www.sec.gov/cgi-bin/browse-edgar"
 
     def __init__(self, http_client: HttpClient) -> None:
@@ -76,6 +77,34 @@ class FilingsEndpoints:
         url = urljoin(self.DATA_URL, f"submissions/CIK{cik_str}.json")
         data = self.http_client.get(url)
 
+        return self._filter_submissions(data, submission_type, from_date, to_date)
+
+    def get_company_submissions_page(self, page_name: str) -> Dict[str, Any]:
+        """
+        Fetch one older-history submissions page.
+
+        The main submissions payload lists additional filing history in
+        ``filings.files`` (e.g. ``CIK0000320193-submissions-001.json``);
+        this fetches one of those pages. The returned payload has the
+        same columnar shape as ``filings.recent``.
+
+        Args:
+            page_name: The ``name`` entry from ``filings.files``
+
+        Returns:
+            Columnar filings data (``accessionNumber``, ``form``, ...)
+        """
+        url = urljoin(self.DATA_URL, f"submissions/{page_name}")
+        return self.http_client.get(url)
+
+    def _filter_submissions(
+        self,
+        data: Dict[str, Any],
+        submission_type: Optional[str],
+        from_date: Optional[str],
+        to_date: Optional[str],
+    ) -> Dict[str, Any]:
+
         # Apply filters if provided
         if submission_type or from_date or to_date:
             filings_data = data.get("filings", {})
@@ -110,12 +139,14 @@ class FilingsEndpoints:
             >>> print(f"Form type: {filing['form']}")
             >>> print(f"Filed on: {filing['filingDate']}")
         """
-        cik_str = str(cik).zfill(10)
+        # Archive folders live on www.sec.gov and use the unpadded CIK;
+        # the folder listing is served as index.json
+        cik_str = str(int(str(cik)))
         accession = accession_number.replace("-", "")
 
         url = urljoin(
-            self.DATA_URL,
-            f"Archives/edgar/data/{cik_str}/{accession}/{accession_number}-index.json",
+            self.ARCHIVES_URL,
+            f"Archives/edgar/data/{cik_str}/{accession}/index.json",
         )
 
         return self.http_client.get(url)
