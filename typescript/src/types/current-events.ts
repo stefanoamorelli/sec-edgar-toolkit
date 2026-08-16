@@ -7,7 +7,7 @@ export interface Event {
   description: string;
   date: Date;
   item: string;
-  significance: 'low' | 'medium' | 'high';
+  significance: "low" | "medium" | "high";
   details: Record<string, any>;
 }
 
@@ -21,7 +21,7 @@ export interface Agreement {
 }
 
 export interface ExecutiveChange {
-  type: 'appointment' | 'resignation' | 'termination';
+  type: "appointment" | "resignation" | "termination";
   person: {
     name: string;
     position: string;
@@ -37,7 +37,7 @@ export interface ExecutiveChange {
 }
 
 export interface Acquisition {
-  type: 'acquisition' | 'merger' | 'divestiture';
+  type: "acquisition" | "merger" | "divestiture";
   target: {
     name: string;
     description: string;
@@ -45,7 +45,7 @@ export interface Acquisition {
   value: number | null;
   currency: string;
   expectedClosingDate: Date | null;
-  status: 'announced' | 'pending' | 'completed' | 'terminated';
+  status: "announced" | "pending" | "completed" | "terminated";
 }
 
 export interface EarningsData {

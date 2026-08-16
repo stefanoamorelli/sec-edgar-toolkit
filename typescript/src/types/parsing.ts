@@ -20,7 +20,7 @@ export interface DocumentSection {
   content: string;
   startIndex: number;
   endIndex: number;
-  type: 'text' | 'table' | 'xbrl' | 'exhibit';
+  type: "text" | "table" | "xbrl" | "exhibit";
 }
 
 export interface Table {
@@ -29,7 +29,7 @@ export interface Table {
   rows: string[][];
   metadata: {
     location: string;
-    format: 'html' | 'text' | 'xbrl';
+    format: "html" | "text" | "xbrl";
   };
 }
 
@@ -60,7 +60,7 @@ export interface Metric {
 }
 
 export interface Statement {
-  type: 'forward_looking' | 'risk_factor' | 'material_change';
+  type: "forward_looking" | "risk_factor" | "material_change";
   content: string;
   confidence: number;
   location: string;
@@ -76,7 +76,7 @@ export interface ParsingValidationError {
   type: string;
   message: string;
   location: string;
-  severity: 'error' | 'warning' | 'info';
+  severity: "error" | "warning" | "info";
 }
 
 export interface ValidationWarning {

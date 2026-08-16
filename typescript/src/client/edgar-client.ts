@@ -1,34 +1,38 @@
 /**
  * SEC EDGAR API Client
- * 
+ *
  * This module provides the main SEC EDGAR API client that combines all endpoint
  * modules into a single, easy-to-use interface.
- * 
+ *
  * Example:
  *   import { EdgarClient } from 'sec-edgar-toolkit';
- *   
+ *
  *   const client = new EdgarClient({ userAgent: 'MyApp/1.0 (contact@example.com)' });
  *   const company = await client.getCompanyByTicker('AAPL');
  *   const submissions = await client.getCompanySubmissions(company.cik_str);
- * 
+ *
  * Note:
  *   The SEC requires a User-Agent header with contact information for all API requests.
  *   Please provide accurate contact information in case the SEC needs to reach you
  *   about your usage.
  */
 
-import { HttpClient } from '../utils';
-import { CompanyEndpoints, FilingsEndpoints, XbrlEndpoints } from '../endpoints';
+import { HttpClient } from "../utils";
+import {
+  CompanyEndpoints,
+  FilingsEndpoints,
+  XbrlEndpoints,
+} from "../endpoints";
 import {
   CompanyTicker,
   CompanySubmissions,
   EdgarClientConfig,
-  RequestOptions
-} from '../types';
-import { InvalidUserAgentError } from '../exceptions/errors';
+  RequestOptions,
+} from "../types";
+import { InvalidUserAgentError } from "../exceptions/errors";
 
 export class EdgarClient {
-  private httpClient: HttpClient;
+  public readonly httpClient: HttpClient;
   private userAgent: string;
 
   // Endpoint modules
@@ -38,8 +42,9 @@ export class EdgarClient {
 
   constructor(config: EdgarClientConfig = {}) {
     // Get user agent from config or environment variable
-    const userAgent = config.userAgent || process.env.SEC_EDGAR_TOOLKIT_USER_AGENT;
-    
+    const userAgent =
+      config.userAgent || process.env.SEC_EDGAR_TOOLKIT_USER_AGENT;
+
     if (!userAgent) {
       throw new InvalidUserAgentError();
     }
@@ -53,10 +58,13 @@ export class EdgarClient {
       rateLimitDelay: config.rateLimitDelay,
       maxRetries: config.maxRetries,
       timeout: config.timeout,
-      cache: config.cache !== false ? {
-        ttl: 300000, // 5 minutes default
-        maxSize: 500,
-      } : false,
+      cache:
+        config.cache !== false
+          ? {
+              ttl: 300000, // 5 minutes default
+              maxSize: 500,
+            }
+          : false,
     });
 
     // Initialize endpoint modules
@@ -68,7 +76,9 @@ export class EdgarClient {
   // Convenience methods that delegate to endpoint modules
 
   // Company methods
-  async getCompanyTickers(forceRefresh: boolean = false): Promise<Record<string, any>> {
+  async getCompanyTickers(
+    forceRefresh: boolean = false,
+  ): Promise<Record<string, any>> {
     return this.company.getCompanyTickers(forceRefresh);
   }
 
@@ -87,12 +97,15 @@ export class EdgarClient {
   // Filing methods
   async getCompanySubmissions(
     cik: string | number,
-    options: RequestOptions = {}
+    options: RequestOptions = {},
   ): Promise<CompanySubmissions> {
     return this.filings.getCompanySubmissions(cik, options);
   }
 
-  async getFiling(cik: string | number, accessionNumber: string): Promise<Record<string, any>> {
+  async getFiling(
+    cik: string | number,
+    accessionNumber: string,
+  ): Promise<Record<string, any>> {
     return this.filings.getFiling(cik, accessionNumber);
   }
 
@@ -105,7 +118,7 @@ export class EdgarClient {
     cik: string | number,
     taxonomy: string,
     tag: string,
-    unit?: string
+    unit?: string,
   ): Promise<Record<string, any>> {
     return this.xbrl.getCompanyConcept(cik, taxonomy, tag, unit);
   }
@@ -115,7 +128,7 @@ export class EdgarClient {
     tag: string,
     unit: string,
     year: number,
-    options: RequestOptions = {}
+    options: RequestOptions = {},
   ): Promise<Record<string, any>> {
     return this.xbrl.getFrames(taxonomy, tag, unit, year, options);
   }

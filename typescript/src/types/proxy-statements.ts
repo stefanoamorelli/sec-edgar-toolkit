@@ -46,8 +46,8 @@ export interface Proposal {
   number: number;
   title: string;
   description: string;
-  type: 'management' | 'shareholder';
-  recommendation: 'for' | 'against' | 'abstain';
+  type: "management" | "shareholder";
+  recommendation: "for" | "against" | "abstain";
   details: string;
 }
 
@@ -57,7 +57,7 @@ export interface VotingMatter {
   votesAgainst: number;
   abstentions: number;
   brokerNonVotes: number;
-  outcome: 'passed' | 'failed' | 'pending';
+  outcome: "passed" | "failed" | "pending";
 }
 
 export interface ParsedProxyStatement {

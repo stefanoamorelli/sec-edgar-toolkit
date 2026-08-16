@@ -2,7 +2,7 @@
  * Comprehensive caching system for SEC EDGAR data
  */
 
-import { createHash } from 'crypto';
+import { createHash } from "crypto";
 
 export interface CacheEntry<T> {
   data: T;
@@ -43,7 +43,7 @@ export class Cache<T = any> {
    */
   get(key: string): T | null {
     const entry = this.cache.get(key);
-    
+
     if (!entry) {
       this.misses++;
       return null;
@@ -60,7 +60,7 @@ export class Cache<T = any> {
     // Update access order for LRU
     this.updateAccessOrder(key);
     this.hits++;
-    
+
     return entry.data;
   }
 
@@ -69,7 +69,7 @@ export class Cache<T = any> {
    */
   set(key: string, data: T, ttl?: number): void {
     const expiry = ttl || this.options.ttl;
-    
+
     // Check size limit
     if (this.cache.size >= this.options.maxSize && !this.cache.has(key)) {
       this.evictLRU();
@@ -107,13 +107,13 @@ export class Cache<T = any> {
   has(key: string): boolean {
     const entry = this.cache.get(key);
     if (!entry) return false;
-    
+
     // Check expiry
     if (entry.expiry && Date.now() > entry.expiry) {
       this.delete(key);
       return false;
     }
-    
+
     return true;
   }
 
@@ -139,7 +139,8 @@ export class Cache<T = any> {
       size: this.cache.size,
       hits: this.hits,
       misses: this.misses,
-      hitRate: this.hits + this.misses > 0 ? this.hits / (this.hits + this.misses) : 0,
+      hitRate:
+        this.hits + this.misses > 0 ? this.hits / (this.hits + this.misses) : 0,
     };
   }
 
@@ -148,14 +149,14 @@ export class Cache<T = any> {
    */
   invalidatePattern(pattern: RegExp): number {
     let count = 0;
-    
+
     for (const key of this.cache.keys()) {
       if (pattern.test(key)) {
         this.delete(key);
         count++;
       }
     }
-    
+
     return count;
   }
 
@@ -165,14 +166,14 @@ export class Cache<T = any> {
   cleanup(): number {
     let count = 0;
     const now = Date.now();
-    
+
     for (const [key, entry] of this.cache.entries()) {
       if (entry.expiry && now > entry.expiry) {
         this.delete(key);
         count++;
       }
     }
-    
+
     return count;
   }
 
@@ -180,9 +181,9 @@ export class Cache<T = any> {
    * Generate cache key from multiple values
    */
   static generateKey(...values: any[]): string {
-    const hash = createHash('md5');
+    const hash = createHash("md5");
     hash.update(JSON.stringify(values));
-    return hash.digest('hex');
+    return hash.digest("hex");
   }
 
   /**
@@ -219,28 +220,32 @@ export class Cache<T = any> {
  */
 export function cacheable(options: CacheOptions = {}) {
   const cache = new Cache(options);
-  
-  return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
+
+  return function (
+    target: any,
+    propertyKey: string,
+    descriptor: PropertyDescriptor,
+  ) {
     const originalMethod = descriptor.value;
-    
+
     descriptor.value = async function (...args: any[]) {
       const cacheKey = Cache.generateKey(propertyKey, ...args);
-      
+
       // Check cache first
       const cached = cache.get(cacheKey);
       if (cached !== null) {
         return cached;
       }
-      
+
       // Call original method
       const result = await originalMethod.apply(this, args);
-      
+
       // Cache result
       cache.set(cacheKey, result);
-      
+
       return result;
     };
-    
+
     return descriptor;
   };
 }
@@ -251,24 +256,24 @@ export function cacheable(options: CacheOptions = {}) {
 export class MultiLevelCache<T = any> {
   private memoryCache: Cache<T>;
   private persistentCache?: Cache<T>; // Would implement with file system or IndexedDB
-  
+
   constructor(options: CacheOptions = {}) {
     this.memoryCache = new Cache(options);
-    
+
     if (options.persistent) {
       // Initialize persistent cache (implementation would depend on environment)
       // For Node.js: use file system
       // For browser: use IndexedDB or localStorage
     }
   }
-  
+
   async get(key: string): Promise<T | null> {
     // Check memory cache first
     let data = this.memoryCache.get(key);
     if (data !== null) {
       return data;
     }
-    
+
     // Check persistent cache
     if (this.persistentCache) {
       data = await this.persistentCache.get(key);
@@ -278,34 +283,34 @@ export class MultiLevelCache<T = any> {
         return data;
       }
     }
-    
+
     return null;
   }
-  
+
   async set(key: string, data: T, ttl?: number): Promise<void> {
     // Set in memory cache
     this.memoryCache.set(key, data, ttl);
-    
+
     // Set in persistent cache
     if (this.persistentCache) {
       await this.persistentCache.set(key, data, ttl);
     }
   }
-  
+
   async delete(key: string): Promise<boolean> {
     const memoryDeleted = this.memoryCache.delete(key);
     let persistentDeleted = false;
-    
+
     if (this.persistentCache) {
       persistentDeleted = await this.persistentCache.delete(key);
     }
-    
+
     return memoryDeleted || persistentDeleted;
   }
-  
+
   async clear(): Promise<void> {
     this.memoryCache.clear();
-    
+
     if (this.persistentCache) {
       await this.persistentCache.clear();
     }
@@ -317,18 +322,18 @@ export class MultiLevelCache<T = any> {
  */
 export class RequestCache {
   private cache: MultiLevelCache<any>;
-  
+
   constructor(options: CacheOptions = {}) {
     this.cache = new MultiLevelCache(options);
   }
-  
+
   /**
    * Generate cache key for HTTP request
    */
   private generateRequestKey(url: string, options?: any): string {
     return Cache.generateKey(url, options);
   }
-  
+
   /**
    * Get cached response
    */
@@ -336,15 +341,20 @@ export class RequestCache {
     const key = this.generateRequestKey(url, options);
     return await this.cache.get(key);
   }
-  
+
   /**
    * Cache response
    */
-  async set(url: string, response: any, options?: any, ttl?: number): Promise<void> {
+  async set(
+    url: string,
+    response: any,
+    options?: any,
+    ttl?: number,
+  ): Promise<void> {
     const key = this.generateRequestKey(url, options);
     await this.cache.set(key, response, ttl);
   }
-  
+
   /**
    * Delete cached response
    */
@@ -352,7 +362,7 @@ export class RequestCache {
     const key = this.generateRequestKey(url, options);
     return await this.cache.delete(key);
   }
-  
+
   /**
    * Invalidate all cache entries for a base URL
    */

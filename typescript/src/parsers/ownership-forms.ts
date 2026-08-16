@@ -9,7 +9,7 @@
  * Form 5: Annual statement of changes in beneficial ownership
  */
 
-import { XMLParser } from 'fast-xml-parser';
+import { XMLParser } from "fast-xml-parser";
 import {
   DocumentInfo,
   IssuerInfo,
@@ -19,7 +19,7 @@ import {
   DerivativeTransaction,
   ParsedOwnershipForm,
   OwnershipFormParseError,
-} from '../types/ownership-forms';
+} from "../types/ownership-forms";
 
 export { OwnershipFormParseError };
 
@@ -35,21 +35,24 @@ export class OwnershipFormParser {
    */
   constructor(xmlContent: string | Buffer) {
     this.xmlContent = xmlContent;
-    
+
     try {
       const parser = new XMLParser({
         ignoreAttributes: false,
         parseTagValue: false, // Don't auto-parse numbers to preserve leading zeros
         trimValues: true,
       });
-      
-      const xmlString = typeof xmlContent === 'string' 
-        ? xmlContent 
-        : xmlContent.toString('utf-8');
-      
+
+      const xmlString =
+        typeof xmlContent === "string"
+          ? xmlContent
+          : xmlContent.toString("utf-8");
+
       this.root = parser.parse(xmlString);
     } catch (error: any) {
-      throw new OwnershipFormParseError(`Failed to parse XML: ${error.message}`);
+      throw new OwnershipFormParseError(
+        `Failed to parse XML: ${error.message}`,
+      );
     }
 
     this.formType = this.extractFormType();
@@ -62,21 +65,21 @@ export class OwnershipFormParser {
   private extractFormType(): string {
     // Navigate through possible wrapper elements
     const doc = this.root.ownershipDocument || this.root;
-    
+
     // Try multiple possible locations for form type
-    const documentType = this.findNestedValue(doc, ['documentType']);
+    const documentType = this.findNestedValue(doc, ["documentType"]);
     if (documentType) {
       return documentType.toString().trim();
     }
 
     // Fallback: check schemaVersion or other indicators
-    const schemaVersion = this.findNestedValue(doc, ['schemaVersion']);
+    const schemaVersion = this.findNestedValue(doc, ["schemaVersion"]);
     if (schemaVersion) {
       // Assume it's a Form 4 if we can't find explicit type
-      return '4';
+      return "4";
     }
 
-    throw new OwnershipFormParseError('Could not determine form type from XML');
+    throw new OwnershipFormParseError("Could not determine form type from XML");
   }
 
   /**
@@ -84,16 +87,16 @@ export class OwnershipFormParser {
    */
   private findNestedValue(obj: any, path: string[]): any {
     let current = obj;
-    
+
     for (const key of path) {
       if (!current) return null;
-      
+
       // Direct property
       if (current[key] !== undefined) {
         current = current[key];
         continue;
       }
-      
+
       // Search in all properties (case insensitive)
       let found = false;
       for (const prop in current) {
@@ -103,31 +106,31 @@ export class OwnershipFormParser {
           break;
         }
       }
-      
+
       if (!found) return null;
     }
-    
+
     return current;
   }
 
   /**
    * Safely extract text from an XML element.
    */
-  private getText(element: any, defaultValue: string = ''): string {
+  private getText(element: any, defaultValue: string = ""): string {
     if (!element) return defaultValue;
-    
-    if (typeof element === 'string' || typeof element === 'number') {
+
+    if (typeof element === "string" || typeof element === "number") {
       return element.toString().trim();
     }
-    
+
     if (element.value !== undefined) {
       return this.getText(element.value, defaultValue);
     }
-    
-    if (element['#text'] !== undefined) {
-      return element['#text'].toString().trim();
+
+    if (element["#text"] !== undefined) {
+      return element["#text"].toString().trim();
     }
-    
+
     return defaultValue;
   }
 
@@ -137,7 +140,7 @@ export class OwnershipFormParser {
   private getFloat(element: any, defaultValue: number = 0.0): number {
     const text = this.getText(element);
     if (!text) return defaultValue;
-    
+
     const parsed = parseFloat(text);
     return isNaN(parsed) ? defaultValue : parsed;
   }
@@ -160,10 +163,10 @@ export class OwnershipFormParser {
     if (dateFormats[0].test(dateText)) {
       return new Date(dateText);
     } else if (dateFormats[1].test(dateText)) {
-      const [month, day, year] = dateText.split('/');
+      const [month, day, year] = dateText.split("/");
       return new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
     } else if (dateFormats[2].test(dateText)) {
-      const [month, day, year] = dateText.split('-');
+      const [month, day, year] = dateText.split("-");
       return new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
     }
 
@@ -176,20 +179,25 @@ export class OwnershipFormParser {
    */
   parseDocumentInfo(): DocumentInfo {
     const doc = this.root.ownershipDocument || this.root;
-    
-    const periodOfReport = this.findNestedValue(doc, ['periodOfReport']);
-    const dateOfOriginalSubmission = this.findNestedValue(doc, ['dateOfOriginalSubmission']);
-    const notSubjectToSection16 = this.findNestedValue(doc, ['notSubjectToSection16']);
+
+    const periodOfReport = this.findNestedValue(doc, ["periodOfReport"]);
+    const dateOfOriginalSubmission = this.findNestedValue(doc, [
+      "dateOfOriginalSubmission",
+    ]);
+    const notSubjectToSection16 = this.findNestedValue(doc, [
+      "notSubjectToSection16",
+    ]);
 
     return {
       formType: this.formType,
-      schemaVersion: this.getText(this.findNestedValue(doc, ['schemaVersion'])),
-      documentType: this.getText(this.findNestedValue(doc, ['documentType'])),
+      schemaVersion: this.getText(this.findNestedValue(doc, ["schemaVersion"])),
+      documentType: this.getText(this.findNestedValue(doc, ["documentType"])),
       periodOfReport: this.getDate(periodOfReport),
       dateOfOriginalSubmission: this.getDate(dateOfOriginalSubmission),
       ...(notSubjectToSection16 !== null && {
-        notSubjectToSection16: this.getText(notSubjectToSection16).toLowerCase() === 'true'
-      })
+        notSubjectToSection16:
+          this.getText(notSubjectToSection16).toLowerCase() === "true",
+      }),
     };
   }
 
@@ -198,16 +206,16 @@ export class OwnershipFormParser {
    */
   parseIssuerInfo(): IssuerInfo {
     const doc = this.root.ownershipDocument || this.root;
-    const issuer = this.findNestedValue(doc, ['issuer']);
-    
+    const issuer = this.findNestedValue(doc, ["issuer"]);
+
     if (!issuer) {
-      return { cik: '', name: '', tradingSymbol: '' };
+      return { cik: "", name: "", tradingSymbol: "" };
     }
 
     return {
-      cik: this.getText(issuer.issuerCik || ''),
-      name: this.getText(issuer.issuerName || ''),
-      tradingSymbol: this.getText(issuer.issuerTradingSymbol || ''),
+      cik: this.getText(issuer.issuerCik || ""),
+      name: this.getText(issuer.issuerName || ""),
+      tradingSymbol: this.getText(issuer.issuerTradingSymbol || ""),
     };
   }
 
@@ -216,55 +224,62 @@ export class OwnershipFormParser {
    */
   parseReportingOwnerInfo(): ReportingOwnerInfo {
     const doc = this.root.ownershipDocument || this.root;
-    const reportingOwner = this.findNestedValue(doc, ['reportingOwner']);
-    
+    const reportingOwner = this.findNestedValue(doc, ["reportingOwner"]);
+
     if (!reportingOwner) {
       return {
-        cik: '',
-        name: '',
-        street1: '',
-        street2: '',
-        city: '',
-        state: '',
-        zipCode: '',
-        stateDescription: '',
+        cik: "",
+        name: "",
+        street1: "",
+        street2: "",
+        city: "",
+        state: "",
+        zipCode: "",
+        stateDescription: "",
       };
     }
 
     const ownerInfo: ReportingOwnerInfo = {
-      cik: '',
-      name: '',
-      street1: '',
-      street2: '',
-      city: '',
-      state: '',
-      zipCode: '',
-      stateDescription: '',
+      cik: "",
+      name: "",
+      street1: "",
+      street2: "",
+      city: "",
+      state: "",
+      zipCode: "",
+      stateDescription: "",
     };
 
     // Parse owner identification
     const ownerId = reportingOwner.reportingOwnerId;
     if (ownerId) {
-      ownerInfo.cik = this.getText(ownerId.rptOwnerCik || '');
-      ownerInfo.name = this.getText(ownerId.rptOwnerName || '');
-      ownerInfo.street1 = this.getText(ownerId.rptOwnerStreet1 || '');
-      ownerInfo.street2 = this.getText(ownerId.rptOwnerStreet2 || '');
-      ownerInfo.city = this.getText(ownerId.rptOwnerCity || '');
-      ownerInfo.state = this.getText(ownerId.rptOwnerState || '');
-      ownerInfo.zipCode = this.getText(ownerId.rptOwnerZipCode || '');
-      ownerInfo.stateDescription = this.getText(ownerId.rptOwnerStateDescription || '');
+      ownerInfo.cik = this.getText(ownerId.rptOwnerCik || "");
+      ownerInfo.name = this.getText(ownerId.rptOwnerName || "");
+      ownerInfo.street1 = this.getText(ownerId.rptOwnerStreet1 || "");
+      ownerInfo.street2 = this.getText(ownerId.rptOwnerStreet2 || "");
+      ownerInfo.city = this.getText(ownerId.rptOwnerCity || "");
+      ownerInfo.state = this.getText(ownerId.rptOwnerState || "");
+      ownerInfo.zipCode = this.getText(ownerId.rptOwnerZipCode || "");
+      ownerInfo.stateDescription = this.getText(
+        ownerId.rptOwnerStateDescription || "",
+      );
     }
 
     // Parse owner relationship
     const relationship = reportingOwner.reportingOwnerRelationship;
     if (relationship) {
       ownerInfo.relationship = {
-        isDirector: this.getText(relationship.isDirector || '').toLowerCase() === 'true',
-        isOfficer: this.getText(relationship.isOfficer || '').toLowerCase() === 'true',
-        isTenPercentOwner: this.getText(relationship.isTenPercentOwner || '').toLowerCase() === 'true',
-        isOther: this.getText(relationship.isOther || '').toLowerCase() === 'true',
-        officerTitle: this.getText(relationship.officerTitle || ''),
-        otherText: this.getText(relationship.otherText || ''),
+        isDirector:
+          this.getText(relationship.isDirector || "").toLowerCase() === "true",
+        isOfficer:
+          this.getText(relationship.isOfficer || "").toLowerCase() === "true",
+        isTenPercentOwner:
+          this.getText(relationship.isTenPercentOwner || "").toLowerCase() ===
+          "true",
+        isOther:
+          this.getText(relationship.isOther || "").toLowerCase() === "true",
+        officerTitle: this.getText(relationship.officerTitle || ""),
+        otherText: this.getText(relationship.otherText || ""),
       };
     }
 
@@ -276,30 +291,34 @@ export class OwnershipFormParser {
    */
   parseNonDerivativeTransactions(): NonDerivativeTransaction[] {
     const doc = this.root.ownershipDocument || this.root;
-    
+
     // Look for transactions in nonDerivativeTable or directly in the document
-    const nonDerivativeTable = this.findNestedValue(doc, ['nonDerivativeTable']);
+    const nonDerivativeTable = this.findNestedValue(doc, [
+      "nonDerivativeTable",
+    ]);
     let transactionElements;
-    
+
     if (nonDerivativeTable) {
       transactionElements = nonDerivativeTable.nonDerivativeTransaction || [];
     } else {
       // Try to find transactions directly in the document
       transactionElements = doc.nonDerivativeTransaction || [];
     }
-    
+
     const transactions: NonDerivativeTransaction[] = [];
-    const transactionArray = Array.isArray(transactionElements) ? transactionElements : [transactionElements];
+    const transactionArray = Array.isArray(transactionElements)
+      ? transactionElements
+      : [transactionElements];
 
     for (const transElem of transactionArray) {
       if (!transElem) continue;
 
       const transaction: NonDerivativeTransaction = {
-        securityTitle: '',
+        securityTitle: "",
         transactionDate: null,
         shares: 0,
         pricePerShare: 0,
-        acquiredDisposedCode: '',
+        acquiredDisposedCode: "",
       };
 
       // Security title
@@ -311,15 +330,25 @@ export class OwnershipFormParser {
       // Transaction date
       const transDate = transElem.transactionDate;
       if (transDate) {
-        transaction.transactionDate = this.getDate(transDate.value || transDate);
+        transaction.transactionDate = this.getDate(
+          transDate.value || transDate,
+        );
       }
 
       // Transaction amounts
       const amounts = transElem.transactionAmounts;
       if (amounts) {
-        transaction.shares = this.getFloat(amounts.transactionShares?.value || amounts.transactionShares);
-        transaction.pricePerShare = this.getFloat(amounts.transactionPricePerShare?.value || amounts.transactionPricePerShare);
-        transaction.acquiredDisposedCode = this.getText(amounts.transactionAcquiredDisposedCode?.value || amounts.transactionAcquiredDisposedCode);
+        transaction.shares = this.getFloat(
+          amounts.transactionShares?.value || amounts.transactionShares,
+        );
+        transaction.pricePerShare = this.getFloat(
+          amounts.transactionPricePerShare?.value ||
+            amounts.transactionPricePerShare,
+        );
+        transaction.acquiredDisposedCode = this.getText(
+          amounts.transactionAcquiredDisposedCode?.value ||
+            amounts.transactionAcquiredDisposedCode,
+        );
       }
 
       // Transaction coding
@@ -327,24 +356,29 @@ export class OwnershipFormParser {
       if (coding) {
         transaction.formType = this.getText(coding.transactionFormType);
         transaction.code = this.getText(coding.transactionCode);
-        transaction.equitySwapInvolved = this.getText(coding.equitySwapInvolved).toLowerCase() === 'true';
+        transaction.equitySwapInvolved =
+          this.getText(coding.equitySwapInvolved).toLowerCase() === "true";
       }
 
       // Post-transaction amounts
       const postTrans = transElem.postTransactionAmounts;
       if (postTrans) {
         transaction.sharesOwnedFollowingTransaction = this.getFloat(
-          postTrans.sharesOwnedFollowingTransaction?.value || postTrans.sharesOwnedFollowingTransaction
+          postTrans.sharesOwnedFollowingTransaction?.value ||
+            postTrans.sharesOwnedFollowingTransaction,
         );
         transaction.directOrIndirectOwnership = this.getText(
-          postTrans.directOrIndirectOwnership?.value || postTrans.directOrIndirectOwnership
+          postTrans.directOrIndirectOwnership?.value ||
+            postTrans.directOrIndirectOwnership,
         );
       }
 
       // Ownership nature
       const ownership = transElem.ownershipNature;
       if (ownership) {
-        transaction.natureOfOwnership = this.getText(ownership.value || ownership);
+        transaction.natureOfOwnership = this.getText(
+          ownership.value || ownership,
+        );
       }
 
       transactions.push(transaction);
@@ -358,21 +392,25 @@ export class OwnershipFormParser {
    */
   parseNonDerivativeHoldings(): NonDerivativeHolding[] {
     const doc = this.root.ownershipDocument || this.root;
-    const nonDerivativeTable = this.findNestedValue(doc, ['nonDerivativeTable']);
-    
+    const nonDerivativeTable = this.findNestedValue(doc, [
+      "nonDerivativeTable",
+    ]);
+
     if (!nonDerivativeTable) return [];
 
     const holdings: NonDerivativeHolding[] = [];
     const holdingElements = nonDerivativeTable.nonDerivativeHolding || [];
-    const holdingArray = Array.isArray(holdingElements) ? holdingElements : [holdingElements];
+    const holdingArray = Array.isArray(holdingElements)
+      ? holdingElements
+      : [holdingElements];
 
     for (const holdingElem of holdingArray) {
       if (!holdingElem) continue;
 
       const holding: NonDerivativeHolding = {
-        securityTitle: '',
+        securityTitle: "",
         sharesOwned: 0,
-        directOrIndirectOwnership: '',
+        directOrIndirectOwnership: "",
       };
 
       // Security title
@@ -390,7 +428,9 @@ export class OwnershipFormParser {
       // Direct or indirect ownership
       const ownershipType = holdingElem.directOrIndirectOwnership;
       if (ownershipType) {
-        holding.directOrIndirectOwnership = this.getText(ownershipType.value || ownershipType);
+        holding.directOrIndirectOwnership = this.getText(
+          ownershipType.value || ownershipType,
+        );
       }
 
       // Nature of ownership
@@ -410,24 +450,26 @@ export class OwnershipFormParser {
    */
   parseDerivativeTransactions(): DerivativeTransaction[] {
     const doc = this.root.ownershipDocument || this.root;
-    const derivativeTable = this.findNestedValue(doc, ['derivativeTable']);
-    
+    const derivativeTable = this.findNestedValue(doc, ["derivativeTable"]);
+
     if (!derivativeTable) return [];
 
     const transactions: DerivativeTransaction[] = [];
     const transactionElements = derivativeTable.derivativeTransaction || [];
-    const transactionArray = Array.isArray(transactionElements) ? transactionElements : [transactionElements];
+    const transactionArray = Array.isArray(transactionElements)
+      ? transactionElements
+      : [transactionElements];
 
     for (const transElem of transactionArray) {
       if (!transElem) continue;
 
       const transaction: DerivativeTransaction = {
-        securityTitle: '',
+        securityTitle: "",
         conversionOrExercisePrice: 0,
         transactionDate: null,
         shares: 0,
         totalValue: 0,
-        acquiredDisposedCode: '',
+        acquiredDisposedCode: "",
       };
 
       // Security title
@@ -439,40 +481,62 @@ export class OwnershipFormParser {
       // Conversion or exercise price
       const conversion = transElem.conversionOrExercisePrice;
       if (conversion) {
-        transaction.conversionOrExercisePrice = this.getFloat(conversion.value || conversion);
+        transaction.conversionOrExercisePrice = this.getFloat(
+          conversion.value || conversion,
+        );
       }
 
       // Transaction date
       const transDate = transElem.transactionDate;
       if (transDate) {
-        transaction.transactionDate = this.getDate(transDate.value || transDate);
+        transaction.transactionDate = this.getDate(
+          transDate.value || transDate,
+        );
       }
 
       // Transaction amounts
       const amounts = transElem.transactionAmounts;
       if (amounts) {
-        transaction.shares = this.getFloat(amounts.transactionShares?.value || amounts.transactionShares);
-        transaction.totalValue = this.getFloat(amounts.transactionTotalValue?.value || amounts.transactionTotalValue);
-        transaction.acquiredDisposedCode = this.getText(amounts.transactionAcquiredDisposedCode?.value || amounts.transactionAcquiredDisposedCode);
+        transaction.shares = this.getFloat(
+          amounts.transactionShares?.value || amounts.transactionShares,
+        );
+        transaction.totalValue = this.getFloat(
+          amounts.transactionTotalValue?.value || amounts.transactionTotalValue,
+        );
+        transaction.acquiredDisposedCode = this.getText(
+          amounts.transactionAcquiredDisposedCode?.value ||
+            amounts.transactionAcquiredDisposedCode,
+        );
       }
 
       // Exercise date and expiration date
       const exerciseDate = transElem.exerciseDate;
       if (exerciseDate) {
-        transaction.exerciseDate = this.getDate(exerciseDate.value || exerciseDate);
+        transaction.exerciseDate = this.getDate(
+          exerciseDate.value || exerciseDate,
+        );
       }
 
       const expirationDate = transElem.expirationDate;
       if (expirationDate) {
-        transaction.expirationDate = this.getDate(expirationDate.value || expirationDate);
+        transaction.expirationDate = this.getDate(
+          expirationDate.value || expirationDate,
+        );
       }
 
       // Underlying security
       const underlying = transElem.underlyingSecurity;
       if (underlying) {
         transaction.underlyingSecurity = {
-          title: this.getText(underlying.underlyingSecurityTitle?.value || underlying.underlyingSecurityTitle || ''),
-          shares: this.getFloat(underlying.underlyingSecurityShares?.value || underlying.underlyingSecurityShares),
+          title: this.getText(
+            underlying.underlyingSecurityTitle?.value ||
+              underlying.underlyingSecurityTitle ||
+              "",
+          ),
+          shares: this.getFloat(
+            underlying.underlyingSecurityShares?.value ||
+              underlying.underlyingSecurityShares,
+          ),
         };
       }
 
@@ -505,7 +569,7 @@ export class Form4Parser extends OwnershipFormParser {
   constructor(xmlContent: string | Buffer) {
     super(xmlContent);
     const form = this.parseDocumentInfo();
-    if (form.formType !== '4') {
+    if (form.formType !== "4") {
       console.warn(`Expected Form 4, but found Form ${form.formType}`);
     }
   }
@@ -520,7 +584,7 @@ export class Form5Parser extends OwnershipFormParser {
   constructor(xmlContent: string | Buffer) {
     super(xmlContent);
     const form = this.parseDocumentInfo();
-    if (form.formType !== '5') {
+    if (form.formType !== "5") {
       console.warn(`Expected Form 5, but found Form ${form.formType}`);
     }
   }

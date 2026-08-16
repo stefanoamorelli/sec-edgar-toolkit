@@ -88,6 +88,6 @@ export interface ParsedOwnershipForm {
 export class OwnershipFormParseError extends Error {
   constructor(message: string) {
     super(message);
-    this.name = 'OwnershipFormParseError';
+    this.name = "OwnershipFormParseError";
   }
 }
