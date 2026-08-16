@@ -49,7 +49,12 @@ The SEC EDGAR Toolkit provides easy-to-use libraries for both TypeScript/JavaScr
 | Async Support | ✅ Promise-based | ✅ async/await |
 | Error Handling | ✅ Typed exceptions | ✅ Typed exceptions |
 | User Agent | ✅ Required | ✅ Required |
-| Caching | ❌ | ✅ 24-hour ticker cache |
+| Filing-scoped statements (FilingSummary/R-files, incl. segments) | ✅ | ✅ |
+| Form objects (OwnershipForm, EightK, TenK, TenQ) | ✅ | ✅ |
+| Typed item enums (TenKItem, TenQItem, EightKItem) | ✅ | ✅ |
+| Global recent-filings feed | ✅ | ✅ |
+| Deep filing-history pagination | ✅ | ✅ |
+| Caching | ✅ In-memory LRU + TTL | ✅ 24-hour ticker cache |
 
 ## Installation
 
@@ -66,12 +71,67 @@ yarn add sec-edgar-toolkit
 ### Python
 
 ```bash
-pip install sec-edgar-toolkit
+pip install sec-edgar-toolkit            # minimal: requests is the only dependency
+pip install 'sec-edgar-toolkit[pandas]'  # + DataFrame output (get_fact, statement DataFrames)
+pip install 'sec-edgar-toolkit[full]'    # + pandas and lxml (faster, more forgiving XML parsing)
 ```
+
+The base install covers the whole API surface with only `requests` as a
+dependency: filings, form objects, item extraction, facts, and
+filing-scoped statements. Only the DataFrame-returning helpers need
+`pandas`. When `lxml` is present it is used for XML parsing, and the
+standard library handles it otherwise.
 
 ## Quick Start
 
 ### TypeScript/JavaScript
+
+```typescript
+import { Company, setIdentity, getCurrentFilings, TenKItem, EightKItem } from 'sec-edgar-toolkit';
+
+setIdentity('YourApp/1.0 (your.email@example.com)');
+
+// Companies resolve by ticker or CIK
+const company = await Company.lookup('AAPL');
+console.log(company.name, company.cik, await company.sicDescription());
+
+// Filings come back newest first, with .latest()
+const latest10K = (await company.getFilings({ form: '10-K' })).latest();
+
+// Form-specific objects: TenK/TenQ sections, EightK events, Form 3/4/5 ownership
+const tenK = await latest10K.obj();
+console.log(tenK.riskFactors.slice(0, 500));
+
+const mda = await latest10K.getItem(TenKItem.MANAGEMENT_DISCUSSION_AND_ANALYSIS);
+
+const eightK = await (await company.getFilings({ form: '8-K' })).latest().obj();
+if (eightK.hasItem(EightKItem.RESULTS_OF_OPERATIONS)) {
+  console.log('Earnings 8-K', eightK.pressReleases);
+}
+
+const form4 = await (await company.getFilings({ form: '4' })).latest().obj();
+for (const tx of form4.transactions) {
+  console.log(form4.ownerName, tx.transactionCode, tx.shares, tx.pricePerShare);
+}
+
+// XBRL: company facts and filing-scoped statements (including segments)
+const facts = await company.getFacts();
+const revenue = facts.getFact('RevenueFromContractWithCustomerExcludingAssessedTax');
+
+const xbrl = latest10K.xbrl();
+const statements = await xbrl.getAllStatements();
+
+// Financial statements as period tables
+const financials = await company.getFinancials();
+const income = financials.incomeStatement();
+
+// Global near-real-time filings feed
+for (const filing of await getCurrentFilings('8-K', 10)) {
+  console.log(filing.filingDate, filing.companyName, filing.formType);
+}
+```
+
+The original chainable query-builder client stays available:
 
 ```typescript
 import { createClient } from 'sec-edgar-toolkit';
@@ -93,18 +153,59 @@ const riskFactors = await filing.getItem("1A"); // Get specific item
 ### Python
 
 ```python
+from sec_edgar_toolkit import Company, set_identity
+
+set_identity("YourApp/1.0 (your.email@example.com)")
+
+# Companies resolve by ticker or CIK
+company = Company("AAPL")
+print(company.name, company.cik, company.sic_description)
+
+# Filings come back newest first, with .latest()
+latest_10k = company.get_filings(form="10-K").latest()
+
+# Form-specific objects: TenK/TenQ sections, EightK events, Form 3/4/5 ownership
+tenk = latest_10k.obj()
+print(tenk.risk_factors[:500])
+
+# Items are addressable by typed enums (TenKItem, TenQItem, EightKItem)
+from sec_edgar_toolkit import EightKItem, TenKItem
+
+mda = latest_10k.get_item(TenKItem.MANAGEMENT_DISCUSSION_AND_ANALYSIS)
+eightk = company.get_filings(form="8-K").latest().obj()
+if eightk.has_item(EightKItem.RESULTS_OF_OPERATIONS):
+    print("Earnings 8-K")
+
+form4 = company.get_filings(form="4").latest().obj()
+for tx in form4.transactions:
+    print(form4.owner_name, tx.transaction_code, tx.shares, tx.price_per_share)
+
+# XBRL: company facts and filing-scoped statements (including segments)
+facts = company.get_facts()
+revenue = facts.get_fact("RevenueFromContractWithCustomerExcludingAssessedTax")
+
+xbrl = latest_10k.xbrl()
+statements = xbrl.get_all_statements()
+
+# Financial statements as DataFrames
+financials = company.get_financials()
+income = financials.income_statement()
+
+# Global near-real-time filings feed
+from sec_edgar_toolkit import get_current_filings
+
+for filing in get_current_filings(form="8-K", page_size=10):
+    print(filing.filing_date, filing.company_name, filing.form_type)
+```
+
+A chainable query-builder client is also available:
+
+```python
 from sec_edgar_toolkit import create_client
 
 client = create_client("YourApp/1.0 (your.email@example.com)")
-
-# Find company and get filings
 company = client.companies.lookup("AAPL")
 filings = company.filings.form_types(["10-K"]).recent(5).fetch()
-
-# Extract items from filing
-filing = filings[0]
-items = filing.extract_items()  # Get all items
-risk_factors = filing.get_item("1A")  # Get specific item
 ```
 
 ### Item Extraction

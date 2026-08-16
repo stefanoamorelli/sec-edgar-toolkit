@@ -1,131 +1,51 @@
 """
 SEC Filing Item Extractor
 
-Extracts individual items from SEC filings (10-K, 10-Q, 8-K, etc.)
-based on standard item numbering and structure.
+Extraction engine that pulls individual items out of SEC filings
+(10-K, 10-Q, 8-K) using the definitions in :mod:`.items`.
 """
 
 import re
-from dataclasses import dataclass, field
-from enum import Enum
-from typing import Dict, List, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union
 
+from .items import (
+    FORM_8K_ITEMS,
+    FORM_10K_ITEMS,
+    FORM_10Q_ITEMS,
+    FORM_ITEM_DEFINITIONS,
+    EightKItem,
+    ExtractedItem,
+    FormType,
+    ItemDefinition,
+    TenKItem,
+    TenQItem,
+)
 
-class FormType(Enum):
-    """Supported SEC form types for item extraction."""
-
-    FORM_10K = "10-K"
-    FORM_10Q = "10-Q"
-    FORM_8K = "8-K"
-    FORM_20F = "20-F"
-    FORM_40F = "40-F"
-
-
-@dataclass
-class ItemDefinition:
-    """Definition of an SEC filing item."""
-
-    number: str
-    title: str
-    aliases: List[str] = field(default_factory=list)
-    required: bool = True
-
-
-@dataclass
-class ExtractedItem:
-    """Represents an extracted item from a filing."""
-
-    item_number: str
-    title: str
-    content: str
-    start_position: int
-    end_position: int
+__all__ = [
+    "ItemExtractor",
+    "FormType",
+    "ItemDefinition",
+    "ExtractedItem",
+    "TenKItem",
+    "TenQItem",
+    "EightKItem",
+    "FORM_10K_ITEMS",
+    "FORM_10Q_ITEMS",
+    "FORM_8K_ITEMS",
+    "FORM_ITEM_DEFINITIONS",
+]
 
 
 class ItemExtractor:
     """Extracts individual items from SEC filings."""
 
-    # 10-K Item definitions
-    FORM_10K_ITEMS = [
-        ItemDefinition("1", "Business"),
-        ItemDefinition("1A", "Risk Factors"),
-        ItemDefinition("1B", "Unresolved Staff Comments"),
-        ItemDefinition("1C", "Cybersecurity", required=False),  # Added in 2023
-        ItemDefinition("2", "Properties"),
-        ItemDefinition("3", "Legal Proceedings"),
-        ItemDefinition("4", "Mine Safety Disclosures", required=False),
-        ItemDefinition("5", "Market for Registrant's Common Equity"),
-        ItemDefinition("6", "Reserved", required=False),
-        ItemDefinition("7", "Management's Discussion and Analysis", aliases=["MD&A"]),
-        ItemDefinition(
-            "7A", "Quantitative and Qualitative Disclosures About Market Risk"
-        ),
-        ItemDefinition("8", "Financial Statements and Supplementary Data"),
-        ItemDefinition("9", "Changes in and Disagreements with Accountants"),
-        ItemDefinition("9A", "Controls and Procedures"),
-        ItemDefinition("9B", "Other Information"),
-        ItemDefinition(
-            "9C", "Disclosure Regarding Foreign Jurisdictions", required=False
-        ),
-        ItemDefinition("10", "Directors, Executive Officers and Corporate Governance"),
-        ItemDefinition("11", "Executive Compensation"),
-        ItemDefinition("12", "Security Ownership"),
-        ItemDefinition("13", "Certain Relationships and Related Transactions"),
-        ItemDefinition("14", "Principal Accountant Fees and Services"),
-        ItemDefinition("15", "Exhibits and Financial Statement Schedules"),
-    ]
-
-    # 10-Q Item definitions
-    FORM_10Q_ITEMS = [
-        ItemDefinition("1", "Financial Statements"),
-        ItemDefinition("2", "Management's Discussion and Analysis", aliases=["MD&A"]),
-        ItemDefinition(
-            "3", "Quantitative and Qualitative Disclosures About Market Risk"
-        ),
-        ItemDefinition("4", "Controls and Procedures"),
-        ItemDefinition("1", "Legal Proceedings", aliases=["Part II, Item 1"]),
-        ItemDefinition("1A", "Risk Factors", aliases=["Part II, Item 1A"]),
-        ItemDefinition(
-            "2", "Unregistered Sales of Equity Securities", aliases=["Part II, Item 2"]
-        ),
-        ItemDefinition(
-            "3", "Defaults Upon Senior Securities", aliases=["Part II, Item 3"]
-        ),
-        ItemDefinition(
-            "4", "Mine Safety Disclosures", aliases=["Part II, Item 4"], required=False
-        ),
-        ItemDefinition("5", "Other Information", aliases=["Part II, Item 5"]),
-        ItemDefinition("6", "Exhibits", aliases=["Part II, Item 6"]),
-    ]
-
-    # 8-K Item definitions (most common items)
-    FORM_8K_ITEMS = [
-        ItemDefinition("1.01", "Entry into a Material Definitive Agreement"),
-        ItemDefinition("1.02", "Termination of a Material Definitive Agreement"),
-        ItemDefinition("2.01", "Completion of Acquisition or Disposition of Assets"),
-        ItemDefinition("2.02", "Results of Operations and Financial Condition"),
-        ItemDefinition("2.03", "Creation of a Direct Financial Obligation"),
-        ItemDefinition("3.01", "Notice of Delisting or Failure to Satisfy"),
-        ItemDefinition("3.02", "Unregistered Sales of Equity Securities"),
-        ItemDefinition("4.01", "Changes in Registrant's Certifying Accountant"),
-        ItemDefinition(
-            "4.02", "Non-Reliance on Previously Issued Financial Statements"
-        ),
-        ItemDefinition("5.01", "Changes in Control of Registrant"),
-        ItemDefinition("5.02", "Departure of Directors or Certain Officers"),
-        ItemDefinition("5.03", "Amendments to Articles of Incorporation or Bylaws"),
-        ItemDefinition("7.01", "Regulation FD Disclosure"),
-        ItemDefinition("8.01", "Other Events"),
-        ItemDefinition("9.01", "Financial Statements and Exhibits"),
-    ]
+    FORM_10K_ITEMS = FORM_10K_ITEMS
+    FORM_10Q_ITEMS = FORM_10Q_ITEMS
+    FORM_8K_ITEMS = FORM_8K_ITEMS
 
     def __init__(self):
         """Initialize the item extractor."""
-        self.form_items = {
-            FormType.FORM_10K: self.FORM_10K_ITEMS,
-            FormType.FORM_10Q: self.FORM_10Q_ITEMS,
-            FormType.FORM_8K: self.FORM_8K_ITEMS,
-        }
+        self.form_items = dict(FORM_ITEM_DEFINITIONS)
 
     def extract_items(
         self, content: str, form_type: Union[str, FormType]
@@ -270,25 +190,32 @@ class ItemExtractor:
                 )
 
                 if matches:
-                    # Use the first match after TOC (if TOC exists)
-                    match = matches[0]
-                    if len(matches) > 1 and toc_items:
-                        # Skip matches that appear in TOC
-                        for m in matches[1:]:
-                            if not self._is_in_toc(m.start(), toc_items):
-                                match = m
-                                break
+                    # The same heading occurs in the table of contents, the
+                    # cover page, and the body; the body occurrence is the
+                    # one followed by real content, so pick the match with
+                    # the longest span to the next item heading.
+                    best: Tuple[int, int] = (-1, -1)  # (length, start)
+                    for m in matches:
+                        if toc_items and self._is_in_toc(m.start(), toc_items):
+                            continue
+                        end = self._find_item_end(content, m.start(), item_definitions)
+                        length = end - m.start()
+                        if length > best[0]:
+                            best = (length, m.start())
+                    if best[1] < 0:
+                        end = self._find_item_end(
+                            content, matches[0].start(), item_definitions
+                        )
+                        best = (end - matches[0].start(), matches[0].start())
 
-                    start_pos = match.start()
-
-                    # Find the end position (start of next item)
-                    end_pos = self._find_item_end(content, start_pos, item_definitions)
+                    start_pos = best[1]
+                    end_pos = start_pos + best[0]
 
                     # Extract content
                     item_content = content[start_pos:end_pos].strip()
 
-                    items[item_def.number] = ExtractedItem(
-                        item_number=item_def.number,
+                    items[item_def.result_key()] = ExtractedItem(
+                        item_number=item_def.result_key(),
                         title=item_def.title,
                         content=item_content,
                         start_position=start_pos,

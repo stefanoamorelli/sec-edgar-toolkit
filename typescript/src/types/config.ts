@@ -7,10 +7,12 @@ export interface EdgarClientConfig {
   rateLimitDelay?: number;
   maxRetries?: number;
   timeout?: number;
-  cache?: false | {
-    ttl?: number;
-    maxSize?: number;
-  };
+  cache?:
+    | false
+    | {
+        ttl?: number;
+        maxSize?: number;
+      };
 }
 
 export interface RequestOptions {

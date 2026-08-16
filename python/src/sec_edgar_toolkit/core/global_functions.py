@@ -1,8 +1,8 @@
 """
-Global functions providing edgartools-compatible API.
+Module-level entry points of the high-level API.
 
-These functions provide the main entry points for working with SEC data,
-matching the interface expected by applications using edgartools.
+These functions provide the main entry points for working with SEC data:
+identity setup, company lookup and search, and filing retrieval.
 """
 
 from __future__ import annotations
@@ -12,6 +12,7 @@ import os
 from typing import List, Optional, Union
 
 from ..client import SecEdgarApi
+from .collections import Filings
 from .company import Company
 from .filing import Filing
 
@@ -24,8 +25,6 @@ _global_api: Optional[SecEdgarApi] = None
 def set_identity(user_agent: str) -> None:
     """
     Set the user agent for SEC API requests.
-
-    This function is equivalent to edgar.set_identity() in edgartools.
 
     Args:
         user_agent: User agent string with contact information
@@ -55,8 +54,6 @@ def _get_api() -> SecEdgarApi:
 def find_company(identifier: Union[str, int]) -> Optional[Company]:
     """
     Find a company by ticker or CIK.
-
-    This function is equivalent to edgar.find_company() in edgartools.
 
     Args:
         identifier: Company ticker symbol or CIK number
@@ -90,8 +87,6 @@ def search(query: str) -> List[Company]:
     """
     Search for companies by name.
 
-    This function is equivalent to edgar.search() in edgartools.
-
     Args:
         query: Search query (company name)
 
@@ -118,11 +113,9 @@ def get_filings(
     since: Optional[str] = None,
     before: Optional[str] = None,
     limit: Optional[int] = None,
-) -> List[Filing]:
+) -> Filings:
     """
     Get filings with flexible filtering options.
-
-    This function is equivalent to edgar.get_filings() in edgartools.
 
     Args:
         form: Form type(s) to filter by (e.g., "10-K", ["10-K", "10-Q"])
@@ -148,7 +141,7 @@ def get_filings(
         if company_data:
             target_cik = company_data["cik_str"]
         else:
-            return []
+            return Filings()
     elif cik:
         target_cik = str(cik).zfill(10)
 
@@ -160,7 +153,7 @@ def get_filings(
         else:
             form_types = list(form)
 
-    filings = []
+    filings = Filings()
 
     if target_cik:
         # Get filings for specific company
@@ -216,4 +209,44 @@ def get_filings(
             if limit and len(filings) >= limit:
                 break
 
-    return filings[:limit] if limit else filings
+    return Filings(filings[:limit]) if limit else filings
+
+
+def get_current_filings(
+    form: Optional[Union[str, List[str]]] = None,
+    page_size: int = 40,
+    owner: str = "include",
+) -> Filings:
+    """
+    Get the most recent filings across all companies (near real-time feed).
+
+    Args:
+        form: Form type(s) to filter by (e.g., "8-K", ["3", "4", "5"])
+        page_size: Maximum number of filings to return
+        owner: Ownership-filing filter: "include", "exclude", or "only"
+
+    Returns:
+        Filings collection, newest first
+
+    Example:
+        >>> filings = get_current_filings(form="8-K", page_size=20)
+    """
+    api = _get_api()
+
+    entries = api.get_recent_filings(form_type=form, limit=page_size, owner=owner)
+
+    filings = Filings()
+    for entry in entries:
+        filings.append(
+            Filing(
+                cik=entry.get("cik", "") or "0",
+                accession_number=entry.get("accession_number", ""),
+                form_type=entry.get("form_type", ""),
+                filing_date=entry.get("filing_date", ""),
+                api=api,
+                company_name=entry.get("company_name", ""),
+            )
+        )
+        if len(filings) >= page_size:
+            break
+    return filings

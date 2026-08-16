@@ -10,10 +10,10 @@ export interface Holding {
   sharesOrPrincipalAmount: {
     shares: number;
     principal: number;
-    type: 'SH' | 'PRN';
+    type: "SH" | "PRN";
   };
-  putCall: 'Put' | 'Call' | null;
-  investmentDiscretion: 'SOLE' | 'SHARED' | 'NONE';
+  putCall: "Put" | "Call" | null;
+  investmentDiscretion: "SOLE" | "SHARED" | "NONE";
   managerClass: string;
   votingAuthority: {
     sole: number;
@@ -50,7 +50,7 @@ export interface HoldingComparison {
   currentValue: number;
   changeInValue: number;
   changeInShares: number;
-  action: 'NEW' | 'SOLD_OUT' | 'INCREASED' | 'DECREASED' | 'NO_CHANGE';
+  action: "NEW" | "SOLD_OUT" | "INCREASED" | "DECREASED" | "NO_CHANGE";
 }
 
 export interface ParsedInstitutionalHolding {

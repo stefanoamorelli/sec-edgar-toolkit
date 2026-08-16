@@ -1,4 +1,4 @@
-"""Tests for core edgartools-compatible functionality."""
+"""Tests for the high-level object API (core module)."""
 
 from unittest.mock import Mock, patch
 
@@ -203,7 +203,7 @@ class TestFiling:
         assert filing.cik == "0000320193"
         assert filing.accession_number == "0000320193-23-000077"
         assert filing.form_type == "10-K"
-        assert filing.filing_date == "2023-11-03"
+        assert str(filing.filing_date) == "2023-11-03"
 
     def test_filing_url_construction(self):
         """Test Filing URL construction."""
@@ -217,7 +217,7 @@ class TestFiling:
             api=mock_api,
         )
 
-        expected_url = "https://www.sec.gov/Archives/edgar/data/0000320193/000032019323000077/0000320193-23-000077-index.htm"
+        expected_url = "https://www.sec.gov/Archives/edgar/data/320193/000032019323000077/0000320193-23-000077-index.htm"
         assert filing.url == expected_url
 
     def test_filing_str_repr(self):

@@ -2,10 +2,11 @@
  * Company endpoints for SEC EDGAR API
  */
 
-import { HttpClient } from '../utils';
-import { CompanyTicker } from '../types';
+import { HttpClient } from "../utils";
+import { CompanyTicker } from "../types";
 
-const SEC_BASE_URL = 'https://data.sec.gov';
+// The ticker mapping file is served from www.sec.gov, not data.sec.gov
+const SEC_FILES_URL = "https://www.sec.gov";
 
 export class CompanyEndpoints {
   private httpClient: HttpClient;
@@ -15,41 +16,59 @@ export class CompanyEndpoints {
     this.httpClient = httpClient;
   }
 
-  async getCompanyTickers(forceRefresh: boolean = false): Promise<Record<string, any>> {
+  async getCompanyTickers(
+    forceRefresh: boolean = false,
+  ): Promise<Record<string, any>> {
     if (!this.companyTickersCache || forceRefresh) {
-      const url = `${SEC_BASE_URL}/files/company_tickers.json`;
+      const url = `${SEC_FILES_URL}/files/company_tickers.json`;
       this.companyTickersCache = await this.httpClient.get(url);
     }
     return this.companyTickersCache!;
   }
 
+  /** Normalize a raw ticker-file entry (cik_str arrives as a number). */
+  private static normalizeEntry(company: Record<string, any>): CompanyTicker {
+    return {
+      ...company,
+      cik_str: String(company.cik_str).padStart(10, "0"),
+    } as CompanyTicker;
+  }
+
   async getCompanyByTicker(ticker: string): Promise<CompanyTicker | null> {
     const tickers = await this.getCompanyTickers();
     const upperTicker = ticker.toUpperCase();
-    
+
     for (const [, company] of Object.entries(tickers)) {
-      if (typeof company === 'object' && company !== null && 'ticker' in company) {
+      if (
+        typeof company === "object" &&
+        company !== null &&
+        "ticker" in company
+      ) {
         if (company.ticker?.toUpperCase() === upperTicker) {
-          return company as CompanyTicker;
+          return CompanyEndpoints.normalizeEntry(company);
         }
       }
     }
-    
+
     return null;
   }
 
   async getCompanyByCik(cik: string | number): Promise<CompanyTicker | null> {
     const tickers = await this.getCompanyTickers();
-    const cikStr = typeof cik === 'number' ? cik.toString().padStart(10, '0') : cik.padStart(10, '0');
-    
+    const cikNumeric = parseInt(String(cik), 10);
+
     for (const [, company] of Object.entries(tickers)) {
-      if (typeof company === 'object' && company !== null && 'cik_str' in company) {
-        if (company.cik_str === cikStr) {
-          return company as CompanyTicker;
+      if (
+        typeof company === "object" &&
+        company !== null &&
+        "cik_str" in company
+      ) {
+        if (parseInt(String(company.cik_str), 10) === cikNumeric) {
+          return CompanyEndpoints.normalizeEntry(company);
         }
       }
     }
-    
+
     return null;
   }
 
@@ -57,17 +76,22 @@ export class CompanyEndpoints {
     const tickers = await this.getCompanyTickers();
     const lowerQuery = query.toLowerCase();
     const results: CompanyTicker[] = [];
-    
+
     for (const [, company] of Object.entries(tickers)) {
-      if (typeof company === 'object' && company !== null && 'title' in company) {
-        const companyData = company as CompanyTicker;
-        if (companyData.title?.toLowerCase().includes(lowerQuery) ||
-            companyData.ticker?.toLowerCase().includes(lowerQuery)) {
-          results.push(companyData);
+      if (
+        typeof company === "object" &&
+        company !== null &&
+        "title" in company
+      ) {
+        if (
+          company.title?.toLowerCase().includes(lowerQuery) ||
+          company.ticker?.toLowerCase().includes(lowerQuery)
+        ) {
+          results.push(CompanyEndpoints.normalizeEntry(company));
         }
       }
     }
-    
+
     return results;
   }
 }

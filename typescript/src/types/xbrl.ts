@@ -12,6 +12,9 @@ export interface XbrlFact {
   fiscal_period?: string;
   start_date?: string;
   end_date?: string;
+  period_end?: string;
+  period_instant?: string;
+  context?: string;
   filed?: string;
   accession_number?: string;
   form?: string;
@@ -81,7 +84,7 @@ export interface CashFlowStatement {
 }
 
 export interface FinancialStatement {
-  statement_type: 'balance_sheet' | 'income_statement' | 'cash_flow';
+  statement_type: "balance_sheet" | "income_statement" | "cash_flow";
   period?: string;
   data: Record<string, XbrlFact>;
 }
@@ -102,8 +105,8 @@ export interface XbrlCompanyFacts {
   cik: string;
   entityName: string;
   facts: {
-    'us-gaap'?: Record<string, any>;
-    'dei'?: Record<string, any>;
+    "us-gaap"?: Record<string, any>;
+    dei?: Record<string, any>;
     [taxonomy: string]: Record<string, any> | undefined;
   };
 }

@@ -2,10 +2,20 @@
  * SEC EDGAR form parsers for XML documents.
  */
 
-export { OwnershipFormParser, Form4Parser, Form5Parser } from './ownership-forms';
-export { FinancialFormParser } from './financial-forms';
-export { CurrentEventParser } from './current-events';
-export { ItemExtractor, FormType, ItemDefinition, ExtractedItem } from './item-extractor';
+export {
+  OwnershipFormParser,
+  Form4Parser,
+  Form5Parser,
+} from "./ownership-forms";
+export { FinancialFormParser } from "./financial-forms";
+export { CurrentEventParser } from "./current-events";
+export {
+  ItemExtractor,
+  FormType,
+  ItemDefinition,
+  ExtractedItem,
+} from "./item-extractor";
+export { TenKItem, TenQItem, EightKItem, FilingItem } from "./items";
 
 export {
   DocumentInfo,
@@ -16,4 +26,4 @@ export {
   DerivativeTransaction,
   ParsedOwnershipForm,
   OwnershipFormParseError,
-} from '../types/ownership-forms';
+} from "../types/ownership-forms";

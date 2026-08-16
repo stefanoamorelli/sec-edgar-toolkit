@@ -1,6 +1,11 @@
-import { OwnershipFormParser, Form4Parser, Form5Parser, OwnershipFormParseError } from '../parsers/ownership-forms';
+import {
+  OwnershipFormParser,
+  Form4Parser,
+  Form5Parser,
+  OwnershipFormParseError,
+} from "../parsers/ownership-forms";
 
-describe('Ownership Form Parsers', () => {
+describe("Ownership Form Parsers", () => {
   const sampleForm4XML = `<?xml version="1.0" encoding="UTF-8"?>
 <ownershipDocument>
   <schemaVersion>X0306</schemaVersion>
@@ -63,74 +68,86 @@ describe('Ownership Form Parsers', () => {
   </nonDerivativeTable>
 </ownershipDocument>`;
 
-  describe('OwnershipFormParser', () => {
-    test('should parse Form 4 XML correctly', () => {
+  describe("OwnershipFormParser", () => {
+    test("should parse Form 4 XML correctly", () => {
       const parser = new OwnershipFormParser(sampleForm4XML);
       const result = parser.parseAll();
 
-      expect(result.documentInfo.formType).toBe('4');
-      expect(result.documentInfo.schemaVersion).toBe('X0306');
-      expect(result.documentInfo.periodOfReport).toEqual(new Date('2024-01-15'));
-      
-      expect(result.issuerInfo.cik).toBe('0000320193');
-      expect(result.issuerInfo.name).toBe('Apple Inc.');
-      expect(result.issuerInfo.tradingSymbol).toBe('AAPL');
-      
-      expect(result.reportingOwnerInfo.cik).toBe('0001214128');
-      expect(result.reportingOwnerInfo.name).toBe('Cook Timothy D');
+      expect(result.documentInfo.formType).toBe("4");
+      expect(result.documentInfo.schemaVersion).toBe("X0306");
+      expect(result.documentInfo.periodOfReport).toEqual(
+        new Date("2024-01-15"),
+      );
+
+      expect(result.issuerInfo.cik).toBe("0000320193");
+      expect(result.issuerInfo.name).toBe("Apple Inc.");
+      expect(result.issuerInfo.tradingSymbol).toBe("AAPL");
+
+      expect(result.reportingOwnerInfo.cik).toBe("0001214128");
+      expect(result.reportingOwnerInfo.name).toBe("Cook Timothy D");
       expect(result.reportingOwnerInfo.relationship?.isOfficer).toBe(true);
-      expect(result.reportingOwnerInfo.relationship?.officerTitle).toBe('Chief Executive Officer');
-      
+      expect(result.reportingOwnerInfo.relationship?.officerTitle).toBe(
+        "Chief Executive Officer",
+      );
+
       expect(result.nonDerivativeTransactions).toHaveLength(1);
       const transaction = result.nonDerivativeTransactions[0];
-      expect(transaction.securityTitle).toBe('Common Stock');
+      expect(transaction.securityTitle).toBe("Common Stock");
       expect(transaction.shares).toBe(10000);
-      expect(transaction.pricePerShare).toBe(185.50);
-      expect(transaction.acquiredDisposedCode).toBe('D');
+      expect(transaction.pricePerShare).toBe(185.5);
+      expect(transaction.acquiredDisposedCode).toBe("D");
       expect(transaction.sharesOwnedFollowingTransaction).toBe(3400000);
     });
 
-    test('should handle invalid XML', () => {
-      const invalidXML = 'not xml at all';
-      expect(() => new OwnershipFormParser(invalidXML)).toThrow(OwnershipFormParseError);
+    test("should handle invalid XML", () => {
+      const invalidXML = "not xml at all";
+      expect(() => new OwnershipFormParser(invalidXML)).toThrow(
+        OwnershipFormParseError,
+      );
     });
 
-    test('should handle Buffer input', () => {
-      const buffer = Buffer.from(sampleForm4XML, 'utf-8');
+    test("should handle Buffer input", () => {
+      const buffer = Buffer.from(sampleForm4XML, "utf-8");
       const parser = new OwnershipFormParser(buffer);
       const result = parser.parseAll();
-      
-      expect(result.documentInfo.formType).toBe('4');
-      expect(result.issuerInfo.name).toBe('Apple Inc.');
+
+      expect(result.documentInfo.formType).toBe("4");
+      expect(result.issuerInfo.name).toBe("Apple Inc.");
     });
   });
 
-  describe('Form4Parser', () => {
-    test('should create specialized Form 4 parser', () => {
+  describe("Form4Parser", () => {
+    test("should create specialized Form 4 parser", () => {
       const parser = new Form4Parser(sampleForm4XML);
       const result = parser.parseAll();
-      
-      expect(result.documentInfo.formType).toBe('4');
-      expect(result.issuerInfo.name).toBe('Apple Inc.');
+
+      expect(result.documentInfo.formType).toBe("4");
+      expect(result.issuerInfo.name).toBe("Apple Inc.");
     });
   });
 
-  describe('Form5Parser', () => {
-    test('should create specialized Form 5 parser', () => {
-      const form5XML = sampleForm4XML.replace('<documentType>4</documentType>', '<documentType>5</documentType>');
+  describe("Form5Parser", () => {
+    test("should create specialized Form 5 parser", () => {
+      const form5XML = sampleForm4XML.replace(
+        "<documentType>4</documentType>",
+        "<documentType>5</documentType>",
+      );
       const parser = new Form5Parser(form5XML);
       const result = parser.parseAll();
-      
-      expect(result.documentInfo.formType).toBe('5');
+
+      expect(result.documentInfo.formType).toBe("5");
     });
   });
 
-  describe('Date parsing', () => {
-    test('should parse different date formats', () => {
-      const xmlWithSlashDate = sampleForm4XML.replace('2024-01-15', '01/15/2024');
+  describe("Date parsing", () => {
+    test("should parse different date formats", () => {
+      const xmlWithSlashDate = sampleForm4XML.replace(
+        "2024-01-15",
+        "01/15/2024",
+      );
       const parser = new OwnershipFormParser(xmlWithSlashDate);
       const result = parser.parseAll();
-      
+
       // Compare just the date parts to avoid timezone issues
       const actualDate = result.documentInfo.periodOfReport;
       expect(actualDate?.getFullYear()).toBe(2024);
@@ -139,17 +156,22 @@ describe('Ownership Form Parsers', () => {
     });
   });
 
-  describe('Error handling', () => {
-    test('should throw OwnershipFormParseError for malformed XML', () => {
-      expect(() => new OwnershipFormParser('completely invalid')).toThrow(OwnershipFormParseError);
+  describe("Error handling", () => {
+    test("should throw OwnershipFormParseError for malformed XML", () => {
+      expect(() => new OwnershipFormParser("completely invalid")).toThrow(
+        OwnershipFormParseError,
+      );
     });
 
-    test('should handle missing form type gracefully', () => {
-      const xmlWithoutType = sampleForm4XML.replace('<documentType>4</documentType>', '');
+    test("should handle missing form type gracefully", () => {
+      const xmlWithoutType = sampleForm4XML.replace(
+        "<documentType>4</documentType>",
+        "",
+      );
       const parser = new OwnershipFormParser(xmlWithoutType);
-      
+
       // Should fall back to checking schema version and assume Form 4
-      expect(parser.parseDocumentInfo().formType).toBe('4');
+      expect(parser.parseDocumentInfo().formType).toBe("4");
     });
   });
 });

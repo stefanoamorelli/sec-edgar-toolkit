@@ -70,7 +70,7 @@ export interface BusinessSegment {
 export interface RiskFactor {
   category: string;
   description: string;
-  severity: 'low' | 'medium' | 'high';
+  severity: "low" | "medium" | "high";
 }
 
 export interface MDSection {

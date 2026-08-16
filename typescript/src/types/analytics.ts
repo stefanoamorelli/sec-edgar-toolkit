@@ -4,10 +4,15 @@
 
 export interface TimelineEvent {
   date: Date;
-  type: 'filing' | 'insider_transaction' | 'institutional_change' | 'earnings' | 'announcement';
+  type:
+    | "filing"
+    | "insider_transaction"
+    | "institutional_change"
+    | "earnings"
+    | "announcement";
   formType: string;
   description: string;
-  significance: 'low' | 'medium' | 'high';
+  significance: "low" | "medium" | "high";
   details: Record<string, any>;
 }
 
@@ -22,7 +27,10 @@ export interface Timeline {
 }
 
 export interface Correlation {
-  type: 'insider_trading_vs_earnings' | 'insider_trading_vs_announcements' | 'institutional_vs_performance';
+  type:
+    | "insider_trading_vs_earnings"
+    | "insider_trading_vs_announcements"
+    | "institutional_vs_performance";
   strength: number;
   significance: number;
   description: string;
@@ -47,7 +55,7 @@ export interface OwnershipChange {
   };
   majorShareholders: Array<{
     name: string;
-    type: 'institutional' | 'insider' | 'other';
+    type: "institutional" | "insider" | "other";
     ownership: number;
     change: number;
   }>;
@@ -58,9 +66,9 @@ export interface OwnershipTrend {
   companyName: string;
   changes: OwnershipChange[];
   trends: {
-    institutionalTrend: 'increasing' | 'decreasing' | 'stable';
-    insiderTrend: 'increasing' | 'decreasing' | 'stable';
-    concentration: 'increasing' | 'decreasing' | 'stable';
+    institutionalTrend: "increasing" | "decreasing" | "stable";
+    insiderTrend: "increasing" | "decreasing" | "stable";
+    concentration: "increasing" | "decreasing" | "stable";
   };
 }
 
@@ -84,5 +92,5 @@ export interface ComplianceMetrics {
     score: number;
   };
   overallScore: number;
-  riskLevel: 'low' | 'medium' | 'high';
+  riskLevel: "low" | "medium" | "high";
 }

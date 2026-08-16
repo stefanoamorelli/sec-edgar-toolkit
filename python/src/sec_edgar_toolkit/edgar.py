@@ -368,9 +368,39 @@ class CompanyFactsBuilder:
         return results
 
     def _process_all_facts(self, facts: Dict[str, Any]) -> List[Dict[str, Any]]:
-        """Process all facts data."""
-        # Simplified - would implement full processing here
-        return []
+        """Process all facts for the selected taxonomy."""
+        results: List[Dict[str, Any]] = []
+        taxonomy_facts = facts.get("facts", {}).get(self._taxonomy, {})
+
+        for concept_name, concept_data in taxonomy_facts.items():
+            units = concept_data.get("units", {})
+            for unit, unit_data in units.items():
+                if self._units and unit != self._units:
+                    continue
+
+                for fact in unit_data:
+                    if self._period:
+                        fact_period = (
+                            fact.get("fy") or fact.get("fp") or fact.get("frame", "")
+                        )
+                        if self._period not in str(fact_period):
+                            continue
+
+                    results.append(
+                        {
+                            "concept": concept_name,
+                            "value": fact.get("val"),
+                            "unit": unit,
+                            "period": fact.get("frame")
+                            or f"FY{fact.get('fy', '')}{fact.get('fp', '')}",
+                            "fiscal_year": fact.get("fy"),
+                            "fiscal_period": fact.get("fp"),
+                            "filed": fact.get("filed"),
+                            "form": fact.get("form"),
+                        }
+                    )
+
+        return results
 
 
 class Company:

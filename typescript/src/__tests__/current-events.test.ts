@@ -2,9 +2,9 @@
  * Tests for Current Events (8-K) Parser
  */
 
-import { CurrentEventParser } from '../parsers/current-events';
+import { CurrentEventParser } from "../parsers/current-events";
 
-describe('CurrentEventParser', () => {
+describe("CurrentEventParser", () => {
   const sample8KContent = `
 UNITED STATES
 SECURITIES AND EXCHANGE COMMISSION
@@ -83,146 +83,168 @@ Senior Vice President and Chief Financial Officer
 
 Date: January 15, 2024`;
 
-  describe('constructor', () => {
-    it('should initialize with form content', () => {
+  describe("constructor", () => {
+    it("should initialize with form content", () => {
       const parser = new CurrentEventParser(sample8KContent);
       expect(parser).toBeDefined();
     });
   });
 
-  describe('getCurrentEvents', () => {
-    it('should extract all current events', () => {
+  describe("getCurrentEvents", () => {
+    it("should extract all current events", () => {
       const parser = new CurrentEventParser(sample8KContent);
       const events = parser.getCurrentEvents();
-      
+
       // Log events to see what's being found
-      console.log('Found events:', events.map(e => ({ item: e.item, desc: e.description.substring(0, 50) })));
+      console.log(
+        "Found events:",
+        events.map((e) => ({
+          item: e.item,
+          desc: e.description.substring(0, 50),
+        })),
+      );
       expect(events.length).toBeGreaterThanOrEqual(5);
-      
+
       // Check Item 1.01
-      const item101 = events.find(e => e.details?.itemNumber === '1.01');
+      const item101 = events.find((e) => e.details?.itemNumber === "1.01");
       expect(item101).toBeDefined();
-      expect(item101?.description).toContain('Entry into a Material Definitive Agreement');
+      expect(item101?.description).toContain(
+        "Entry into a Material Definitive Agreement",
+      );
       expect(item101?.details?.fullText).toBeTruthy();
-      
+
       // Check Item 2.02
-      const item202 = events.find(e => e.details?.itemNumber === '2.02');
+      const item202 = events.find((e) => e.details?.itemNumber === "2.02");
       expect(item202).toBeDefined();
-      expect(item202?.description).toContain('Results of Operations and Financial Condition');
+      expect(item202?.description).toContain(
+        "Results of Operations and Financial Condition",
+      );
       expect(item202?.details?.fullText).toBeTruthy();
-      
+
       // Check Item 5.02
-      const item502 = events.find(e => e.details?.itemNumber === '5.02');
+      const item502 = events.find((e) => e.details?.itemNumber === "5.02");
       expect(item502).toBeDefined();
-      expect(item502?.description).toContain('Departure of Directors');
+      expect(item502?.description).toContain("Departure of Directors");
       expect(item502?.details?.fullText).toBeTruthy();
-      
+
       // Check Item 7.01
-      const item701 = events.find(e => e.details?.itemNumber === '7.01');
+      const item701 = events.find((e) => e.details?.itemNumber === "7.01");
       expect(item701).toBeDefined();
-      expect(item701?.description).toContain('Regulation FD Disclosure');
-      
+      expect(item701?.description).toContain("Regulation FD Disclosure");
+
       // Check Item 8.01
-      const item801 = events.find(e => e.details?.itemNumber === '8.01');
+      const item801 = events.find((e) => e.details?.itemNumber === "8.01");
       expect(item801).toBeDefined();
-      expect(item801?.description).toContain('Other Events');
+      expect(item801?.description).toContain("Other Events");
       expect(item801?.details?.fullText).toBeTruthy();
     });
   });
 
-  describe('getMaterialAgreements', () => {
-    it('should extract material agreement details', () => {
+  describe("getMaterialAgreements", () => {
+    it("should extract material agreement details", () => {
       const parser = new CurrentEventParser(sample8KContent);
       const agreements = parser.getMaterialAgreements();
-      
+
       expect(agreements).toHaveLength(1);
       const agreement = agreements[0];
-      
-      expect(agreement.parties).toContain('APPLE INC.');
-      expect(agreement.parties).toContain('Example Technologies');
-      expect(agreement.type).toBe('Strategic Partnership Agreement');
+
+      expect(agreement.parties).toContain("APPLE INC.");
+      expect(agreement.parties).toContain("Example Technologies");
+      expect(agreement.type).toBe("Strategic Partnership Agreement");
       // Check date within 1 day to account for timezone differences
       const agreementDate = agreement.effectiveDate;
-      const expectedDate = new Date('2024-01-15');
-      const daysDiff = Math.abs(agreementDate.getTime() - expectedDate.getTime()) / (1000 * 60 * 60 * 24);
+      const expectedDate = new Date("2024-01-15");
+      const daysDiff =
+        Math.abs(agreementDate.getTime() - expectedDate.getTime()) /
+        (1000 * 60 * 60 * 24);
       expect(daysDiff).toBeLessThan(2);
-      expect(agreement.description).toContain('AI technology');
+      expect(agreement.description).toContain("AI technology");
       expect(agreement.value).toBe(500000000);
     });
   });
 
-  describe('getExecutiveChanges', () => {
-    it('should extract executive change details', () => {
+  describe("getExecutiveChanges", () => {
+    it("should extract executive change details", () => {
       const parser = new CurrentEventParser(sample8KContent);
       const changes = parser.getExecutiveChanges();
-      
+
       expect(changes).toHaveLength(2);
-      
+
       // Departure
-      const departure = changes.find(c => c.type === 'resignation');
-      expect(departure?.person.name).toBe('John Smith');
-      expect(departure?.person.position).toBe('Senior Vice President of Hardware Engineering');
+      const departure = changes.find((c) => c.type === "resignation");
+      expect(departure?.person.name).toBe("John Smith");
+      expect(departure?.person.position).toBe(
+        "Senior Vice President of Hardware Engineering",
+      );
       // Check date within 1 day to account for timezone differences
       const departureDate = departure?.effectiveDate;
-      const expectedDepartureDate = new Date('2024-03-31');
+      const expectedDepartureDate = new Date("2024-03-31");
       if (departureDate) {
-        const daysDiff = Math.abs(departureDate.getTime() - expectedDepartureDate.getTime()) / (1000 * 60 * 60 * 24);
+        const daysDiff =
+          Math.abs(departureDate.getTime() - expectedDepartureDate.getTime()) /
+          (1000 * 60 * 60 * 24);
         expect(daysDiff).toBeLessThan(2);
       }
-      
+
       // Appointment
-      const appointment = changes.find(c => c.type === 'appointment');
-      expect(appointment?.person.name).toBe('Jane Doe');
-      expect(appointment?.person.position).toBe('Senior Vice President of Hardware Engineering');
-      // Check date within 1 day to account for timezone differences  
+      const appointment = changes.find((c) => c.type === "appointment");
+      expect(appointment?.person.name).toBe("Jane Doe");
+      expect(appointment?.person.position).toBe(
+        "Senior Vice President of Hardware Engineering",
+      );
+      // Check date within 1 day to account for timezone differences
       const appointmentDate = appointment?.effectiveDate;
-      const expectedAppointmentDate = new Date('2024-04-01');
+      const expectedAppointmentDate = new Date("2024-04-01");
       if (appointmentDate) {
-        const daysDiff = Math.abs(appointmentDate.getTime() - expectedAppointmentDate.getTime()) / (1000 * 60 * 60 * 24);
+        const daysDiff =
+          Math.abs(
+            appointmentDate.getTime() - expectedAppointmentDate.getTime(),
+          ) /
+          (1000 * 60 * 60 * 24);
         expect(daysDiff).toBeLessThan(2);
       }
     });
   });
 
-  describe('getEarningsResults', () => {
-    it('should extract earnings results', () => {
+  describe("getEarningsResults", () => {
+    it("should extract earnings results", () => {
       const parser = new CurrentEventParser(sample8KContent);
       const results = parser.getEarningsResults();
-      
+
       expect(results).toBeDefined();
       if (results) {
-        expect(results.period).toContain('December 31, 2023');
+        expect(results.period).toContain("December 31, 2023");
         expect(results.revenue).toBe(120000000000);
         expect(results.netIncome).toBe(30000000000);
       }
     });
   });
 
-  describe('edge cases', () => {
-    it('should handle content without events', () => {
-      const emptyContent = 'This is a document without any items.';
+  describe("edge cases", () => {
+    it("should handle content without events", () => {
+      const emptyContent = "This is a document without any items.";
       const parser = new CurrentEventParser(emptyContent);
       const events = parser.getCurrentEvents();
-      
+
       expect(events).toHaveLength(0);
     });
 
-    it('should handle malformed item numbers', () => {
+    it("should handle malformed item numbers", () => {
       const malformedContent = `
 Item 1.1 Invalid Item Number
 Some content here
 
 ITEM 2.02. Valid Item
 More content`;
-      
+
       const parser = new CurrentEventParser(malformedContent);
       const events = parser.getCurrentEvents();
-      
-      console.log('Malformed test events:', events);
+
+      console.log("Malformed test events:", events);
       // Should find both items since the pattern is case-insensitive
       expect(events).toHaveLength(2);
-      expect(events[0].details?.itemNumber).toBe('1.1');
-      expect(events[1].details?.itemNumber).toBe('2.02');
+      expect(events[0].details?.itemNumber).toBe("1.1");
+      expect(events[1].details?.itemNumber).toBe("2.02");
     });
   });
 });

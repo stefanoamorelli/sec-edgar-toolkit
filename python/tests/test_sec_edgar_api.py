@@ -456,8 +456,8 @@ class TestSecEdgarApi:
         accession_clean = accession_number.replace("-", "")
 
         url = (
-            f"https://data.sec.gov/Archives/edgar/data/{cik}/"
-            f"{accession_clean}/{accession_number}-index.json"
+            f"https://www.sec.gov/Archives/edgar/data/{int(cik)}/"
+            f"{accession_clean}/index.json"
         )
 
         mock_filing = {

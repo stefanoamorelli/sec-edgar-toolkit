@@ -68,7 +68,7 @@ class EnhancedXMLParser:
         else:
             self.parser = None
             if recover or huge_tree:
-                logger.warning(
+                logger.debug(
                     "Advanced parser options not available without lxml. "
                     "Install lxml for better XML parsing capabilities."
                 )
@@ -154,7 +154,7 @@ class EnhancedXMLParser:
                 tag = expression[3:].split("[")[0]
                 return element.findall(f"./{tag}", namespaces)
             else:
-                logger.warning(
+                logger.debug(
                     f"Complex XPath '{expression}' not supported without lxml. "
                     "Install lxml for full XPath support."
                 )
