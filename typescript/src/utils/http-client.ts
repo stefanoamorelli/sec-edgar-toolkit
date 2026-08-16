@@ -11,12 +11,20 @@ import {
 } from "../exceptions";
 import { RequestError, TimeoutError, NetworkError } from "../exceptions/errors";
 import { RequestCache, CacheOptions } from "./cache";
+import { DiskCache } from "./disk-cache";
 
 export interface HttpClientOptions {
   rateLimitDelay?: number;
   maxRetries?: number;
   timeout?: number;
   cache?: CacheOptions | false;
+  /**
+   * Directory for the on-disk response cache. Archive content is cached
+   * indefinitely, API responses for `diskCacheTtl` milliseconds. Falls
+   * back to the SEC_EDGAR_TOOLKIT_CACHE_DIR environment variable.
+   */
+  diskCacheDir?: string;
+  diskCacheTtl?: number;
 }
 
 export class HttpClient {
@@ -26,12 +34,19 @@ export class HttpClient {
   private timeout: number;
   private lastRequestTime: number = 0;
   private cache?: RequestCache;
+  private diskCache?: DiskCache;
 
   constructor(userAgent: string, options: HttpClientOptions = {}) {
     this.userAgent = userAgent;
     this.rateLimitDelay = (options.rateLimitDelay || 0.1) * 1000; // Convert to milliseconds
     this.maxRetries = options.maxRetries || 3;
     this.timeout = options.timeout || 30000;
+
+    const diskDir =
+      options.diskCacheDir || process.env.SEC_EDGAR_TOOLKIT_CACHE_DIR;
+    if (diskDir) {
+      this.diskCache = new DiskCache(diskDir, options.diskCacheTtl);
+    }
 
     // Initialize cache if not explicitly disabled
     if (options.cache !== false) {
@@ -82,6 +97,16 @@ export class HttpClient {
         return cached;
       }
     }
+    if (this.diskCache && !options?.skipCache) {
+      const cached = this.diskCache.get(url, url);
+      if (cached !== null) {
+        try {
+          return JSON.parse(cached);
+        } catch {
+          // fall through to a fresh request
+        }
+      }
+    }
 
     let lastError: Error | null = null;
 
@@ -113,6 +138,9 @@ export class HttpClient {
         // Cache successful responses
         if (this.cache) {
           await this.cache.set(url, data);
+        }
+        if (this.diskCache) {
+          this.diskCache.set(url, url, JSON.stringify(data));
         }
 
         return data;
@@ -176,6 +204,12 @@ export class HttpClient {
         return cached as string;
       }
     }
+    if (this.diskCache && !options?.skipCache) {
+      const cached = this.diskCache.get(cacheKey, url);
+      if (cached !== null) {
+        return cached;
+      }
+    }
 
     let lastError: Error | null = null;
 
@@ -206,6 +240,9 @@ export class HttpClient {
 
         if (this.cache) {
           await this.cache.set(cacheKey, text);
+        }
+        if (this.diskCache) {
+          this.diskCache.set(cacheKey, url, text);
         }
 
         return text;

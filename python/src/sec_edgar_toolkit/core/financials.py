@@ -55,6 +55,40 @@ BALANCE_SHEET_CONCEPTS = [
     "StockholdersEquity",
 ]
 
+# IFRS equivalents let annual reports from foreign private issuers
+# (20-F, 40-F) build statements from the ifrs-full taxonomy.
+IFRS_INCOME_STATEMENT_CONCEPTS = [
+    "Revenue",
+    "CostOfSales",
+    "GrossProfit",
+    "ProfitLossFromOperatingActivities",
+    "ProfitLossBeforeTax",
+    "IncomeTaxExpenseContinuingOperations",
+    "ProfitLoss",
+    "BasicEarningsLossPerShare",
+    "DilutedEarningsLossPerShare",
+]
+
+IFRS_BALANCE_SHEET_CONCEPTS = [
+    "CurrentAssets",
+    "NoncurrentAssets",
+    "Assets",
+    "CurrentLiabilities",
+    "NoncurrentLiabilities",
+    "Liabilities",
+    "Equity",
+]
+
+IFRS_CASH_FLOW_CONCEPTS = [
+    "CashFlowsFromUsedInOperatingActivities",
+    "CashFlowsFromUsedInInvestingActivities",
+    "CashFlowsFromUsedInFinancingActivities",
+    "CashAndCashEquivalents",
+]
+
+ANNUAL_FORMS = ("10-K", "10-K/A", "20-F", "20-F/A", "40-F", "40-F/A")
+QUARTERLY_FORMS = ("10-Q", "10-Q/A", "6-K")
+
 CASH_FLOW_CONCEPTS = [
     "NetCashProvidedByUsedInOperatingActivities",
     "NetCashProvidedByUsedInInvestingActivities",
@@ -91,7 +125,7 @@ class Financials:
             accession_number=getattr(filing, "accession_number", None),
         )
 
-    def _collect(self, concepts: List[str]):
+    def _collect(self, concepts: List[str], ifrs_concepts: Optional[List[str]] = None):
         """
         Build a DataFrame: rows = concepts, columns = period end dates
         (most recent first), using facts reported on this form type.
@@ -101,21 +135,26 @@ class Financials:
         pd = require_pandas()
 
         gaap = self._facts.get("us-gaap") or {}
-        annual = self.form_type.upper().startswith("10-K")
+        ifrs = self._facts.get("ifrs-full") or {}
+        annual = self.form_type.upper().startswith(("10-K", "20-F", "40-F"))
+
+        candidates: List[tuple] = [(concept, gaap) for concept in concepts]
+        if ifrs:
+            candidates += [(concept, ifrs) for concept in ifrs_concepts or []]
 
         # concept -> {end_date: value}
         table: Dict[str, Dict[str, float]] = {}
-        for concept in concepts:
-            concept_data = gaap.get(concept)
+        for concept, taxonomy_facts in candidates:
+            concept_data = taxonomy_facts.get(concept)
             if not concept_data:
                 continue
             for _unit, unit_facts in (concept_data.get("units") or {}).items():
                 series: Dict[str, float] = {}
                 for fact in unit_facts:
                     form = fact.get("form", "")
-                    if annual and form != "10-K":
+                    if annual and form not in ANNUAL_FORMS:
                         continue
-                    if not annual and form not in ("10-Q", "10-K"):
+                    if not annual and form not in QUARTERLY_FORMS + ANNUAL_FORMS:
                         continue
                     if annual and fact.get("fp") not in (None, "FY"):
                         continue
@@ -138,13 +177,13 @@ class Financials:
         return df
 
     def income_statement(self):
-        return self._collect(INCOME_STATEMENT_CONCEPTS)
+        return self._collect(INCOME_STATEMENT_CONCEPTS, IFRS_INCOME_STATEMENT_CONCEPTS)
 
     def balance_sheet(self):
-        return self._collect(BALANCE_SHEET_CONCEPTS)
+        return self._collect(BALANCE_SHEET_CONCEPTS, IFRS_BALANCE_SHEET_CONCEPTS)
 
     def cash_flow(self):
-        return self._collect(CASH_FLOW_CONCEPTS)
+        return self._collect(CASH_FLOW_CONCEPTS, IFRS_CASH_FLOW_CONCEPTS)
 
     # Common aliases
     def cash_flow_statement(self):

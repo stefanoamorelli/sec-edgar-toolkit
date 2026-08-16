@@ -28,6 +28,7 @@ import {
   FactHistoryRow,
   FactQuery,
 } from "./queries";
+import { AsReportedStatements } from "./as-reported";
 import { RenderedReportReader, ReportDescriptor } from "./rendered-reports";
 import { StatementLineItem } from "./report-html-parser";
 import { STATEMENT_CONCEPTS, normalizeStatementType } from "./statements";
@@ -45,6 +46,10 @@ export interface XbrlFilingLike {
 export interface XbrlApiLike {
   xbrl: { getCompanyFacts(cik: string | number): Promise<Record<string, any>> };
   httpClient?: { getRaw(url: string): Promise<string> };
+  getFiling?(
+    cik: string | number,
+    accessionNumber: string,
+  ): Promise<Record<string, any>>;
 }
 
 export class XBRLInstance {
@@ -57,6 +62,7 @@ export class XBRLInstance {
   private _usGaapFacts: Record<string, any> | null = null;
   private _deiFacts: Record<string, any> | null = null;
   private _reportsReader: RenderedReportReader | null = null;
+  private _asReported: AsReportedStatements | null = null;
 
   constructor(filing: XbrlFilingLike, api?: XbrlApiLike) {
     const resolvedApi = api || filing.api;
@@ -83,6 +89,46 @@ export class XBRLInstance {
       this._reportsReader = new RenderedReportReader(this.archiveBase, http);
     }
     return this._reportsReader;
+  }
+
+  /**
+   * Statements assembled from the filing's own XBRL fileset
+   * (instance document plus presentation and label linkbases).
+   */
+  async asReported(): Promise<AsReportedStatements> {
+    if (!this._asReported) {
+      const fileNames: string[] = [];
+      if (this._api.getFiling && this.filing.accessionNumber) {
+        try {
+          const details = await this._api.getFiling(
+            this.cik,
+            this.filing.accessionNumber,
+          );
+          for (const item of details?.directory?.item || []) {
+            if (item?.name) {
+              fileNames.push(String(item.name));
+            }
+          }
+        } catch {
+          // fall through with an empty listing
+        }
+      }
+      const http = this._api.httpClient;
+      if (!http) {
+        throw new Error("As-reported access requires an HTTP client");
+      }
+      this._asReported = new AsReportedStatements(
+        this.archiveBase,
+        http,
+        fileNames,
+      );
+    }
+    return this._asReported;
+  }
+
+  /** The parsed XBRL instance document, or null when absent. */
+  async instanceDocument() {
+    return (await this.asReported()).getDocument();
   }
 
   /**
@@ -187,7 +233,24 @@ export class XBRLInstance {
    * `shortName`, `role`, and `rFile` keys.
    */
   async getAllStatements(): Promise<ReportDescriptor[]> {
-    return this.reports.listReports();
+    const rendered = await this.reports.listReports();
+    if (rendered.length > 0) {
+      return rendered;
+    }
+    // No FilingSummary (the renderer never ran for this filing):
+    // fall back to the roles defined by the presentation linkbase.
+    const asReported = await this.asReported();
+    if (asReported.isAvailable) {
+      const roles = await asReported.listRoles();
+      return roles.map((role) => ({
+        definition: role.split("/").pop() || role,
+        shortName: role.split("/").pop() || role,
+        role,
+        rFile: "",
+        reportType: "",
+      }));
+    }
+    return rendered;
   }
 
   /**
@@ -196,7 +259,29 @@ export class XBRLInstance {
    * @param role The report's role URI (from `getAllStatements()`), its
    *   R-file name, or its short name.
    */
-  async getStatement(role: string): Promise<StatementLineItem[]> {
+  async getStatement(
+    role: string,
+    source: "auto" | "instance" | "rendered" = "auto",
+  ): Promise<StatementLineItem[]> {
+    if (source !== "rendered") {
+      const asReported = await this.asReported();
+      if (asReported.isAvailable) {
+        let resolved = role;
+        if (role.toLowerCase().endsWith(".htm")) {
+          const report = await this.reports.findReport(role);
+          if (report) {
+            resolved = report.role;
+          }
+        }
+        const items = await asReported.getStatement(resolved);
+        if (items.length > 0 || source === "instance") {
+          return items;
+        }
+      }
+      if (source === "instance") {
+        return [];
+      }
+    }
     return this.reports.readStatement(role);
   }
 

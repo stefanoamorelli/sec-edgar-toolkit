@@ -4,6 +4,7 @@ from ..parsers.item_extractor import EightKItem, TenKItem, TenQItem
 from .attachments import Attachment
 from .collections import Filings
 from .company import Company
+from .exhibits import parse_filing_index_html
 from .facts import CompanyFacts
 from .filing import Filing, FilingItem
 from .financials import Financials
@@ -12,12 +13,15 @@ from .form_10k import TenK
 from .form_10q import TenQ
 from .global_functions import (
     find_company,
+    full_text_search,
     get_current_filings,
     get_filings,
     search,
+    search_filings,
     set_identity,
 )
 from .ownership import OwnershipForm, OwnershipHolding, OwnershipTransaction
+from .thirteenf import Holding13F, ThirteenF
 from .xbrl import FactQuery, XBRLInstance
 
 __all__ = [
@@ -32,6 +36,8 @@ __all__ = [
     "OwnershipTransaction",
     "OwnershipHolding",
     "EightK",
+    "ThirteenF",
+    "Holding13F",
     "TenK",
     "TenQ",
     "Attachment",
@@ -44,4 +50,7 @@ __all__ = [
     "search",
     "get_filings",
     "get_current_filings",
+    "full_text_search",
+    "search_filings",
+    "parse_filing_index_html",
 ]

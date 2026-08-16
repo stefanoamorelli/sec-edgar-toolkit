@@ -15,6 +15,7 @@ import logging
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from ...client import SecEdgarApi
+from .as_reported import AsReportedStatements
 from .queries import FactQuery, FactsData, build_fact_records, parse_filter_expression
 from .rendered_reports import RenderedReportReader
 from .statements import STATEMENT_CONCEPTS, normalize_statement_type
@@ -53,6 +54,7 @@ class XBRLInstance:
         self._us_gaap_facts: Optional[Dict[str, Any]] = None
         self._dei_facts: Optional[Dict[str, Any]] = None
         self._reports_reader: Optional[RenderedReportReader] = None
+        self._as_reported: Optional[AsReportedStatements] = None
 
     @property
     def facts(self) -> FactsData:
@@ -83,6 +85,32 @@ class XBRLInstance:
                 self.filing._archive_base, self._api.http_client
             )
         return self._reports_reader
+
+    @property
+    def as_reported(self) -> AsReportedStatements:
+        """
+        Statements assembled from the filing's own XBRL fileset
+        (instance document plus presentation and label linkbases).
+        """
+        if self._as_reported is None:
+            file_names: List[str] = []
+            try:
+                details = self._api.get_filing(self.cik, self.filing.accession_number)
+                for item in details.get("directory", {}).get("item", []):
+                    name = item.get("name")
+                    if name:
+                        file_names.append(name)
+            except Exception as exc:
+                logger.warning(f"Could not list filing archive: {exc}")
+            self._as_reported = AsReportedStatements(
+                self.filing._archive_base, self._api.http_client, file_names
+            )
+        return self._as_reported
+
+    @property
+    def instance_document(self):
+        """The parsed XBRL instance document, or None when absent."""
+        return self.as_reported.document
 
     # ------------------------------------------------------------------
     # Fact queries
@@ -153,21 +181,55 @@ class XBRLInstance:
             List of dicts with ``definition``, ``short_name``, ``role``,
             and ``r_file`` keys.
         """
-        return self.reports.list_reports()
+        rendered = self.reports.list_reports()
+        if rendered:
+            return rendered
+        # No FilingSummary (the renderer never ran for this filing):
+        # fall back to the roles defined by the presentation linkbase.
+        if self.as_reported.is_available:
+            return [
+                {
+                    "definition": role.rsplit("/", 1)[-1],
+                    "short_name": role.rsplit("/", 1)[-1],
+                    "role": role,
+                    "r_file": "",
+                    "report_type": "",
+                }
+                for role in self.as_reported.list_roles()
+            ]
+        return rendered
 
-    def get_statement(self, role: str) -> List[Dict[str, Any]]:
+    def get_statement(self, role: str, source: str = "auto") -> List[Dict[str, Any]]:
         """
-        Parse one rendered report into line items.
+        One statement as ordered line items.
 
         Args:
-            role: The report's role URI (from ``get_all_statements()``),
-                its R-file name, or its short name.
+            role: The statement's role URI (from ``get_all_statements()``),
+                an R-file name, or a short name.
+            source: "auto" prefers the filing's own XBRL fileset (ordered,
+                as-reported, dimensional) and falls back to the rendered
+                R-file; "instance" and "rendered" force one source.
 
         Returns:
             List of line-item dicts with ``concept``, ``label``,
-            ``values`` (period -> number), ``units`` (period -> unit),
-            and ``has_values`` keys.
+            ``section``, ``values`` (period -> number), ``units``
+            (period -> unit), and ``has_values`` keys. Instance-sourced
+            items also carry ``depth``, ``order``, ``abstract``, and
+            ``dimensions``.
         """
+        if source in ("auto", "instance") and self.as_reported.is_available:
+            # R-file names ("R4.htm") only exist in the rendered reports,
+            # so resolve them to a role URI first when possible.
+            resolved = role
+            if role.lower().endswith(".htm"):
+                report = self.reports.find_report(role)
+                if report:
+                    resolved = report["role"]
+            items = self.as_reported.get_statement(resolved)
+            if items or source == "instance":
+                return items
+        if source == "instance":
+            return []
         return self.reports.read_statement(role)
 
     def find_statement(

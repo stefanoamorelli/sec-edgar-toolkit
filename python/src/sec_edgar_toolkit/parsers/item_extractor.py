@@ -12,6 +12,7 @@ from .items import (
     FORM_8K_ITEMS,
     FORM_10K_ITEMS,
     FORM_10Q_ITEMS,
+    FORM_20F_ITEMS,
     FORM_ITEM_DEFINITIONS,
     EightKItem,
     ExtractedItem,
@@ -19,6 +20,7 @@ from .items import (
     ItemDefinition,
     TenKItem,
     TenQItem,
+    TwentyFItem,
 )
 
 __all__ = [
@@ -29,6 +31,8 @@ __all__ = [
     "TenKItem",
     "TenQItem",
     "EightKItem",
+    "TwentyFItem",
+    "FORM_20F_ITEMS",
     "FORM_10K_ITEMS",
     "FORM_10Q_ITEMS",
     "FORM_8K_ITEMS",

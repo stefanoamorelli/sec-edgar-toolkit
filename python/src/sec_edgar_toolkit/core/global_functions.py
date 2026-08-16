@@ -22,18 +22,29 @@ logger = logging.getLogger(__name__)
 _global_api: Optional[SecEdgarApi] = None
 
 
-def set_identity(user_agent: str) -> None:
+def set_identity(
+    user_agent: str,
+    cache_dir: Optional[str] = None,
+    cache_ttl: int = 21600,
+) -> None:
     """
     Set the user agent for SEC API requests.
 
     Args:
         user_agent: User agent string with contact information
+        cache_dir: Optional directory for an on-disk response cache.
+            Archive content is cached indefinitely, API responses for
+            ``cache_ttl`` seconds.
+        cache_ttl: Time-to-live in seconds for cached API responses
 
     Example:
         >>> set_identity("MyCompany/1.0 (contact@example.com)")
+        >>> set_identity("MyCompany/1.0 (c@example.com)", cache_dir="~/.cache/edgar")
     """
     global _global_api
-    _global_api = SecEdgarApi(user_agent=user_agent)
+    _global_api = SecEdgarApi(
+        user_agent=user_agent, cache_dir=cache_dir, cache_ttl=cache_ttl
+    )
     logger.info(f"Set global identity: {user_agent}")
 
 
@@ -249,4 +260,69 @@ def get_current_filings(
         )
         if len(filings) >= page_size:
             break
+    return filings
+
+
+def full_text_search(
+    query: str,
+    forms: Optional[Union[str, List[str]]] = None,
+    since: Optional[str] = None,
+    before: Optional[str] = None,
+    cik: Optional[Union[str, int]] = None,
+    offset: int = 0,
+) -> dict:
+    """
+    Search the full text of filings (2001 onward).
+
+    Quote the query for exact-phrase matching.
+
+    Returns:
+        ``{"total": int, "hits": [hit, ...]}``; each hit carries
+        ``accession_number``, ``cik``, ``company_name``, ``form_type``,
+        ``filing_date``, ``file_type``, and ``score``.
+
+    Example:
+        >>> results = full_text_search('"substantial doubt"', forms="10-K")
+    """
+    api = _get_api()
+    return api.full_text_search(
+        query, forms=forms, start_date=since, end_date=before, cik=cik, offset=offset
+    )
+
+
+def search_filings(
+    query: str,
+    forms: Optional[Union[str, List[str]]] = None,
+    since: Optional[str] = None,
+    before: Optional[str] = None,
+    cik: Optional[Union[str, int]] = None,
+    offset: int = 0,
+) -> Filings:
+    """
+    Full-text search returning Filing objects instead of raw hits.
+
+    Example:
+        >>> for filing in search_filings('"going concern"', forms="10-K"):
+        ...     print(filing.company_name, filing.accession_number)
+    """
+    api = _get_api()
+    results = api.full_text_search(
+        query, forms=forms, start_date=since, end_date=before, cik=cik, offset=offset
+    )
+
+    filings = Filings()
+    for hit in results["hits"]:
+        if not hit["accession_number"] or not hit["cik"]:
+            continue
+        filings.append(
+            Filing(
+                cik=hit["cik"],
+                accession_number=hit["accession_number"],
+                form_type=hit["form_type"]
+                or (hit["root_forms"][0] if hit["root_forms"] else ""),
+                filing_date=hit["filing_date"],
+                api=api,
+                company_name=hit["company_name"],
+            )
+        )
     return filings

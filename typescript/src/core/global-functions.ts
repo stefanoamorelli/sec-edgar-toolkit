@@ -17,8 +17,11 @@ let globalApi: EdgarClient | null = null;
  * @example
  * setIdentity("MyCompany/1.0 (contact@example.com)")
  */
-export function setIdentity(userAgent: string): void {
-  globalApi = new EdgarClient({ userAgent });
+export function setIdentity(
+  userAgent: string,
+  options: { diskCacheDir?: string; diskCacheTtl?: number } = {},
+): void {
+  globalApi = new EdgarClient({ userAgent, ...options } as any);
 }
 
 /** Get the global API instance, creating one from the environment if needed. */
@@ -116,6 +119,69 @@ export async function getCurrentFilings(
     if (filings.length >= pageSize) {
       break;
     }
+  }
+  return filings;
+}
+
+/**
+ * Search the full text of filings (2001 onward). Quote the query for
+ * exact-phrase matching.
+ */
+export async function fullTextSearch(
+  query: string,
+  options: {
+    forms?: string | string[];
+    since?: string;
+    before?: string;
+    cik?: string | number;
+    offset?: number;
+  } = {},
+) {
+  const api = getApi();
+  return api.fullTextSearch(query, {
+    forms: options.forms,
+    startDate: options.since,
+    endDate: options.before,
+    cik: options.cik,
+    offset: options.offset,
+  });
+}
+
+/** Full-text search returning Filing objects instead of raw hits. */
+export async function searchFilings(
+  query: string,
+  options: {
+    forms?: string | string[];
+    since?: string;
+    before?: string;
+    cik?: string | number;
+    offset?: number;
+  } = {},
+): Promise<Filings> {
+  const api = getApi();
+  const results = await api.fullTextSearch(query, {
+    forms: options.forms,
+    startDate: options.since,
+    endDate: options.before,
+    cik: options.cik,
+    offset: options.offset,
+  });
+
+  const filings = new Filings();
+  for (const hit of results.hits) {
+    if (!hit.accessionNumber || !hit.cik) {
+      continue;
+    }
+    filings.push(
+      new Filing({
+        cik: hit.cik,
+        accessionNumber: hit.accessionNumber,
+        formType: hit.formType || hit.rootForms[0] || "",
+        filingDate: hit.filingDate,
+        api,
+        companyName: hit.companyName,
+      }),
+    );
   }
   return filings;
 }

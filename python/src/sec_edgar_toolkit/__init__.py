@@ -45,6 +45,7 @@ from .core import (
     FilingItem,
     Filings,
     Financials,
+    Holding13F,
     OwnershipForm,
     OwnershipHolding,
     OwnershipTransaction,
@@ -52,11 +53,14 @@ from .core import (
     TenKItem,
     TenQ,
     TenQItem,
+    ThirteenF,
     XBRLInstance,
     find_company,
+    full_text_search,
     get_current_filings,
     get_filings,
     search,
+    search_filings,
     set_identity,
 )
 
@@ -80,6 +84,8 @@ from .parsers import (
     Form4Parser,
     Form5Parser,
     OwnershipFormParser,
+    ThirteenFParser,
+    TwentyFItem,
 )
 
 # Type definitions
@@ -110,12 +116,16 @@ __all__ = [
     "FilingItem",
     "TenKItem",
     "TenQItem",
+    "ThirteenF",
+    "Holding13F",
     "EightKItem",
     "set_identity",
     "find_company",
     "search",
     "get_filings",
     "get_current_filings",
+    "full_text_search",
+    "search_filings",
     # Fluent client
     "EdgarClient",
     "create_client",
@@ -131,6 +141,8 @@ __all__ = [
     "OwnershipFormParser",
     "Form4Parser",
     "Form5Parser",
+    "ThirteenFParser",
+    "TwentyFItem",
     # Types
     "CompanyTicker",
     "FilingDocument",

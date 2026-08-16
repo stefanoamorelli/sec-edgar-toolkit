@@ -105,6 +105,7 @@ class Filing:
         self._xbrl_instance: Optional[XBRLInstance] = None
         self._extracted_items: Optional[Dict[str, str]] = None
         self._attachments: Optional[List[Any]] = None
+        self._typed_documents: Optional[Dict[str, Dict[str, str]]] = None
         self._item_extractor = ItemExtractor()
 
         # Construct URLs
@@ -137,22 +138,59 @@ class Filing:
         items = details.get("directory", {}).get("item", [])
         return items if isinstance(items, list) else []
 
+    def _document_types(self) -> Dict[str, Dict[str, str]]:
+        """Typed document records from the filing index page, by file name."""
+        from .exhibits import parse_filing_index_html
+
+        if self._typed_documents is None:
+            self._typed_documents = {}
+            for name in (
+                f"{self.accession_number}-index.html",
+                f"{self.accession_number}-index.htm",
+            ):
+                try:
+                    html = self._api.http_client.get_raw(f"{self._archive_base}/{name}")
+                except Exception:
+                    continue
+                for record in parse_filing_index_html(html):
+                    self._typed_documents[record["document"]] = record
+                break
+        return self._typed_documents
+
     @property
     def attachments(self) -> List[Any]:
-        """All documents in the filing's archive folder as Attachment objects."""
+        """
+        All documents in the filing's archive folder as Attachment
+        objects, typed from the filing index page ("10-K", "EX-99.1",
+        "GRAPHIC", ...).
+        """
         from .attachments import Attachment
 
         if self._attachments is None:
-            self._attachments = [
-                Attachment(
-                    name=item.get("name", ""),
-                    url=f"{self._archive_base}/{item.get('name', '')}",
-                    size=item.get("size"),
+            typed = self._document_types()
+            attachments = []
+            for item in self._directory_items():
+                name = item.get("name", "")
+                if not name or name.endswith("/"):
+                    continue
+                record = typed.get(name, {})
+                attachments.append(
+                    Attachment(
+                        name=name,
+                        url=f"{self._archive_base}/{name}",
+                        size=item.get("size"),
+                        type=record.get("type", ""),
+                        description=record.get("description", ""),
+                        sequence=record.get("sequence", ""),
+                    )
                 )
-                for item in self._directory_items()
-                if item.get("name") and not item.get("name", "").endswith("/")
-            ]
+            self._attachments = attachments
         return self._attachments
+
+    @property
+    def exhibits(self) -> List[Any]:
+        """The filing's exhibits (documents typed EX-*)."""
+        return [a for a in self.attachments if a.is_exhibit]
 
     def text(self, format: str = "text") -> str:
         """
@@ -255,6 +293,7 @@ class Filing:
         Returns:
             - Forms 3/4/5: ``OwnershipForm`` (attribute access to owner,
               transactions, and holdings; also behaves as the parsed dict)
+            - 13F-HR/13F-NT: ``ThirteenF`` (holdings, cover page)
             - 8-K: ``EightK`` (items, date of report, press releases)
             - 10-K/10-Q: ``TenK``/``TenQ`` (sections and financials)
             - Other forms: dictionary with header metadata
@@ -274,6 +313,10 @@ class Filing:
                     return {"parse_error": "No ownership XML document found"}
                 parser = OwnershipFormParser(xml_content)
                 return OwnershipForm(parser.parse_all())
+            elif self.form_type.startswith("13F"):
+                from .thirteenf import ThirteenF
+
+                return ThirteenF.from_filing(self)
             elif self.form_type in ("8-K", "8-K/A"):
                 from .form_8k import EightK
 

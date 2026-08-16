@@ -91,6 +91,28 @@ export class OwnershipHolding {
   }
 }
 
+/** One reporting owner on the form. */
+export class OwnershipOwner {
+  public readonly cik: string;
+  public readonly name: string;
+  public readonly title: string;
+  public readonly isDirector: boolean;
+  public readonly isOfficer: boolean;
+  public readonly isTenPercentOwner: boolean;
+  public readonly isOther: boolean;
+
+  constructor(data: Record<string, any>) {
+    const relationship = data?.relationship || {};
+    this.cik = data?.cik || "";
+    this.name = data?.name || "";
+    this.title = relationship.officerTitle || "";
+    this.isDirector = Boolean(relationship.isDirector);
+    this.isOfficer = Boolean(relationship.isOfficer);
+    this.isTenPercentOwner = Boolean(relationship.isTenPercentOwner);
+    this.isOther = Boolean(relationship.isOther);
+  }
+}
+
 /** Parsed Form 3/4/5 with flat, attribute-style access. */
 export class OwnershipForm {
   public readonly raw: ParsedOwnershipForm;
@@ -109,6 +131,11 @@ export class OwnershipForm {
 
   public readonly transactions: OwnershipTransaction[];
   public readonly holdings: OwnershipHolding[];
+  public readonly derivativeHoldings: OwnershipHolding[];
+  /** Joint filings name several owners; ownerName above is the first. */
+  public readonly owners: OwnershipOwner[];
+  /** footnote id ("F1", ...) -> text */
+  public readonly footnotes: Record<string, string>;
 
   constructor(parsed: ParsedOwnershipForm) {
     this.raw = parsed;
@@ -139,5 +166,16 @@ export class OwnershipForm {
     this.holdings = (parsed.nonDerivativeHoldings || []).map(
       (holding) => new OwnershipHolding(holding),
     );
+    this.derivativeHoldings = (parsed.derivativeHoldings || []).map(
+      (holding) => new OwnershipHolding(holding as any),
+    );
+    const reportingOwners = parsed.reportingOwners || [];
+    this.owners =
+      reportingOwners.length > 0
+        ? reportingOwners.map((data) => new OwnershipOwner(data))
+        : owner
+          ? [new OwnershipOwner(owner)]
+          : [];
+    this.footnotes = parsed.footnotes || {};
   }
 }

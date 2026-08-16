@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import os
 import time
 from typing import Any, Dict, Optional
 
@@ -16,6 +17,7 @@ from ..exceptions import (
     RateLimitError,
     SecEdgarApiError,
 )
+from .disk_cache import DiskCache
 
 # Configure module logger
 logger = logging.getLogger(__name__)
@@ -48,12 +50,19 @@ class HttpClient:
         rate_limit_delay: float = 0.1,
         max_retries: int = 3,
         timeout: int = 30,
+        cache_dir: Optional[str] = None,
+        cache_ttl: int = 21600,
     ) -> None:
         """Initialize HTTP client."""
         self.user_agent = user_agent
         self.rate_limit_delay = rate_limit_delay
         self.timeout = timeout
         self._last_request_time = 0.0
+
+        resolved_cache_dir = cache_dir or os.getenv("SEC_EDGAR_TOOLKIT_CACHE_DIR")
+        self.cache: Optional[DiskCache] = (
+            DiskCache(resolved_cache_dir, ttl=cache_ttl) if resolved_cache_dir else None
+        )
 
         # Configure session with retry strategy
         self.session = requests.Session()
@@ -89,29 +98,26 @@ class HttpClient:
 
         self._last_request_time = time.time()
 
-    def get(
+    @staticmethod
+    def _cache_key(url: str, params: Optional[Dict[str, Any]]) -> str:
+        if not params:
+            return url
+        query = "&".join(f"{k}={params[k]}" for k in sorted(params))
+        return f"{url}?{query}"
+
+    def _fetch_bytes(
         self,
         url: str,
-        params: Optional[Dict[str, Any]] = None,
+        params: Optional[Dict[str, Any]],
         **kwargs: Any,
-    ) -> Dict[str, Any]:
-        """
-        Make HTTP GET request with rate limiting and error handling.
+    ) -> bytes:
+        """Fetch a URL as bytes, consulting the disk cache when enabled."""
+        key = self._cache_key(url, params)
+        if self.cache is not None:
+            cached = self.cache.get(key, url)
+            if cached is not None:
+                return cached
 
-        Args:
-            url: The URL to request
-            params: Optional query parameters
-            **kwargs: Additional arguments to pass to requests
-
-        Returns:
-            Parsed JSON response
-
-        Raises:
-            RateLimitError: If rate limit is exceeded
-            AuthenticationError: If authentication fails
-            NotFoundError: If resource is not found
-            SecEdgarApiError: For other API errors
-        """
         self._rate_limit()
 
         try:
@@ -135,11 +141,41 @@ class HttpClient:
 
             response.raise_for_status()
 
-            return response.json()  # type: ignore[no-any-return]
+            body = response.content
+            if self.cache is not None:
+                self.cache.set(key, url, body)
+            return body
 
         except requests.exceptions.RequestException as e:
             logger.error(f"Request failed for {url}: {str(e)}")
             raise SecEdgarApiError(f"API request failed: {str(e)}") from e
+
+    def get(
+        self,
+        url: str,
+        params: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
+    ) -> Dict[str, Any]:
+        """
+        Make HTTP GET request with rate limiting and error handling.
+
+        Args:
+            url: The URL to request
+            params: Optional query parameters
+            **kwargs: Additional arguments to pass to requests
+
+        Returns:
+            Parsed JSON response
+
+        Raises:
+            RateLimitError: If rate limit is exceeded
+            AuthenticationError: If authentication fails
+            NotFoundError: If resource is not found
+            SecEdgarApiError: For other API errors
+        """
+        import json as _json
+
+        return _json.loads(self._fetch_bytes(url, params, **kwargs))
 
     def get_raw(
         self,
@@ -164,31 +200,4 @@ class HttpClient:
             NotFoundError: If resource is not found
             SecEdgarApiError: For other API errors
         """
-        self._rate_limit()
-
-        try:
-            response = self.session.get(
-                url,
-                params=params,
-                timeout=self.timeout,
-                **kwargs,
-            )
-
-            if response.status_code == 429:
-                raise RateLimitError(
-                    "Rate limit exceeded. Please reduce request frequency."
-                )
-            elif response.status_code == 401:
-                raise AuthenticationError(
-                    "Authentication failed. Ensure User-Agent header is set correctly."
-                )
-            elif response.status_code == 404:
-                raise NotFoundError(f"Resource not found: {url}")
-
-            response.raise_for_status()
-
-            return response.content
-
-        except requests.exceptions.RequestException as e:
-            logger.error(f"Request failed for {url}: {str(e)}")
-            raise SecEdgarApiError(f"API request failed: {str(e)}") from e
+        return self._fetch_bytes(url, params, **kwargs)

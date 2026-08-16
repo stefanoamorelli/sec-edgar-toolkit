@@ -16,11 +16,14 @@ export {
   CASH_FLOW_CONCEPTS,
 } from "./financials";
 export { EightK } from "./form-8k";
+export { ThirteenF, Holding13F } from "./form-13f";
+export { parseFilingIndexHtml, FilingIndexRecord } from "./exhibits";
 export { TenK } from "./form-10k";
 export { TenQ } from "./form-10q";
 export {
   OwnershipForm,
   OwnershipHolding,
+  OwnershipOwner,
   OwnershipTransaction,
 } from "./ownership";
 export { PeriodicReport, ReportFiling } from "./periodic-report";
@@ -31,6 +34,8 @@ export {
   search,
   getFilings,
   getCurrentFilings,
+  fullTextSearch,
+  searchFilings,
   GlobalGetFilingsOptions,
 } from "./global-functions";
 export * from "./xbrl";

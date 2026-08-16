@@ -25,7 +25,11 @@ export class FactQuery extends Array<XbrlFact> {
   byConcept(concept: string): FactQuery {
     const needle = concept.toLowerCase();
     return FactQuery.fromRecords(
-      this.filter((record) => String(record.concept || "").toLowerCase().includes(needle)),
+      this.filter((record) =>
+        String(record.concept || "")
+          .toLowerCase()
+          .includes(needle),
+      ),
     );
   }
 }
@@ -38,7 +42,9 @@ export interface ParsedFilterExpression {
 }
 
 /** Parse a "concept=Assets&unit=USD" filter expression. */
-export function parseFilterExpression(expression: string): ParsedFilterExpression {
+export function parseFilterExpression(
+  expression: string,
+): ParsedFilterExpression {
   const parsed: Record<string, string> = {};
   for (const part of expression.split("&")) {
     const eq = part.indexOf("=");

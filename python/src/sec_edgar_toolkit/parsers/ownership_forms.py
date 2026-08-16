@@ -157,7 +157,10 @@ class OwnershipFormParser:
 
     def parse_reporting_owner_info(self) -> Dict[str, Any]:
         """
-        Parse information about the reporting owner (insider) from the form.
+        Parse the first reporting owner (insider) on the form.
+
+        Joint filings can name several owners; see
+        :meth:`parse_reporting_owners` for all of them.
 
         Returns:
             Dictionary containing reporting owner information
@@ -165,7 +168,24 @@ class OwnershipFormParser:
         owner_elem = self.root.find(".//reportingOwner")
         if owner_elem is None:
             return {}
+        return self._parse_owner_element(owner_elem)
 
+    def parse_reporting_owners(self) -> List[Dict[str, Any]]:
+        """
+        Parse every reporting owner on the form.
+
+        Group filings (funds, 10% owner complexes) commonly report one
+        transaction on behalf of several related owners.
+
+        Returns:
+            One dictionary per reporting owner, in document order
+        """
+        return [
+            self._parse_owner_element(elem)
+            for elem in self.root.findall(".//reportingOwner")
+        ]
+
+    def _parse_owner_element(self, owner_elem: Any) -> Dict[str, Any]:
         owner_info: Dict[str, Any] = {}
 
         # Parse owner identification
@@ -401,6 +421,117 @@ class OwnershipFormParser:
 
         return transactions
 
+    def parse_derivative_holdings(self) -> List[Dict[str, Any]]:
+        """
+        Parse derivative holdings (options and similar positions held,
+        not transacted) from the form.
+
+        Returns:
+            List of dictionaries containing derivative holding information
+        """
+        holdings = []
+
+        for holding_elem in self.root.findall(".//derivativeHolding"):
+            holding: Dict[str, Any] = {
+                "security_title": "",
+                "conversion_or_exercise_price": 0.0,
+                "exercise_date": None,
+                "expiration_date": None,
+                "shares": 0.0,
+                "direct_or_indirect_ownership": "",
+                "nature_of_ownership": "",
+                "underlying_security": {"title": "", "shares": 0.0},
+            }
+
+            security = holding_elem.find("securityTitle")
+            if security is not None:
+                holding["security_title"] = self._get_text(
+                    security.find("value")
+                    if security.find("value") is not None
+                    else security
+                )
+
+            price = holding_elem.find("conversionOrExercisePrice")
+            if price is not None:
+                holding["conversion_or_exercise_price"] = self._get_float(
+                    price.find("value") if price.find("value") is not None else price
+                )
+
+            exercise = holding_elem.find("exerciseDate")
+            if exercise is not None:
+                holding["exercise_date"] = self._get_date(
+                    exercise.find("value")
+                    if exercise.find("value") is not None
+                    else exercise
+                )
+
+            expiration = holding_elem.find("expirationDate")
+            if expiration is not None:
+                holding["expiration_date"] = self._get_date(
+                    expiration.find("value")
+                    if expiration.find("value") is not None
+                    else expiration
+                )
+
+            ownership = holding_elem.find("ownershipNature/directOrIndirectOwnership")
+            if ownership is not None:
+                holding["direct_or_indirect_ownership"] = self._get_text(
+                    ownership.find("value")
+                    if ownership.find("value") is not None
+                    else ownership
+                )
+
+            nature = holding_elem.find("ownershipNature/natureOfOwnership")
+            if nature is not None:
+                holding["nature_of_ownership"] = self._get_text(
+                    nature.find("value") if nature.find("value") is not None else nature
+                )
+
+            amounts = holding_elem.find(
+                "postTransactionAmounts/sharesOwnedFollowingTransaction"
+            )
+            if amounts is not None:
+                holding["shares"] = self._get_float(
+                    amounts.find("value")
+                    if amounts.find("value") is not None
+                    else amounts
+                )
+
+            underlying = holding_elem.find("underlyingSecurity")
+            if underlying is not None:
+                title = underlying.find("underlyingSecurityTitle")
+                shares = underlying.find("underlyingSecurityShares")
+                holding["underlying_security"] = {
+                    "title": self._get_text(
+                        title.find("value")
+                        if title is not None and title.find("value") is not None
+                        else title
+                    ),
+                    "shares": self._get_float(
+                        shares.find("value")
+                        if shares is not None and shares.find("value") is not None
+                        else shares
+                    ),
+                }
+
+            holdings.append(holding)
+
+        return holdings
+
+    def parse_footnotes(self) -> Dict[str, str]:
+        """
+        Parse the form's footnotes.
+
+        Returns:
+            Footnote id ("F1", "F2", ...) -> text
+        """
+        footnotes: Dict[str, str] = {}
+        for footnote in self.root.findall(".//footnotes/footnote"):
+            footnote_id = footnote.get("id", "")
+            if footnote_id and footnote.text:
+                footnotes[footnote_id] = footnote.text.strip()
+        return footnotes
+
     def parse_all(self) -> Dict[str, Any]:
         """
         Parse all information from the ownership form.
@@ -412,9 +543,12 @@ class OwnershipFormParser:
             "document_info": self.parse_document_info(),
             "issuer_info": self.parse_issuer_info(),
             "reporting_owner_info": self.parse_reporting_owner_info(),
+            "reporting_owners": self.parse_reporting_owners(),
             "non_derivative_transactions": self.parse_non_derivative_transactions(),
             "non_derivative_holdings": self.parse_non_derivative_holdings(),
             "derivative_transactions": self.parse_derivative_transactions(),
+            "derivative_holdings": self.parse_derivative_holdings(),
+            "footnotes": self.parse_footnotes(),
         }
 
 

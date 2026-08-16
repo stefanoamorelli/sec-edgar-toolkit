@@ -549,14 +549,142 @@ export class OwnershipFormParser {
   /**
    * Parse all information from the ownership form.
    */
+  /**
+   * Parse every reporting owner on the form. Group filings commonly
+   * report one transaction on behalf of several related owners.
+   */
+  parseReportingOwners(): ReportingOwnerInfo[] {
+    const doc = this.root.ownershipDocument || this.root;
+    const owners = this.findNestedValue(doc, ["reportingOwner"]);
+    const list = Array.isArray(owners) ? owners : owners ? [owners] : [];
+    return list.map((ownerElem: any) => this.parseOwnerElement(ownerElem));
+  }
+
+  private parseOwnerElement(ownerElem: any): ReportingOwnerInfo {
+    const ownerInfo: ReportingOwnerInfo = {
+      cik: "",
+      name: "",
+      street1: "",
+      street2: "",
+      city: "",
+      state: "",
+      zipCode: "",
+      stateDescription: "",
+    };
+
+    const ownerId = ownerElem?.reportingOwnerId;
+    if (ownerId) {
+      ownerInfo.cik = this.getText(ownerId.rptOwnerCik || "");
+      ownerInfo.name = this.getText(ownerId.rptOwnerName || "");
+      ownerInfo.street1 = this.getText(ownerId.rptOwnerStreet1 || "");
+      ownerInfo.street2 = this.getText(ownerId.rptOwnerStreet2 || "");
+      ownerInfo.city = this.getText(ownerId.rptOwnerCity || "");
+      ownerInfo.state = this.getText(ownerId.rptOwnerState || "");
+      ownerInfo.zipCode = this.getText(ownerId.rptOwnerZipCode || "");
+    }
+
+    const relationship = ownerElem?.reportingOwnerRelationship;
+    if (relationship) {
+      ownerInfo.relationship = {
+        isDirector:
+          this.getText(relationship.isDirector || "").toLowerCase() === "true",
+        isOfficer:
+          this.getText(relationship.isOfficer || "").toLowerCase() === "true",
+        isTenPercentOwner:
+          this.getText(relationship.isTenPercentOwner || "").toLowerCase() ===
+          "true",
+        isOther:
+          this.getText(relationship.isOther || "").toLowerCase() === "true",
+        officerTitle: this.getText(relationship.officerTitle || ""),
+        otherText: this.getText(relationship.otherText || ""),
+      };
+    }
+
+    return ownerInfo;
+  }
+
+  /** Parse the form's footnotes: id ("F1", ...) -> text. */
+  parseFootnotes(): Record<string, string> {
+    const doc = this.root.ownershipDocument || this.root;
+    const footnotes: Record<string, string> = {};
+    const container = this.findNestedValue(doc, ["footnotes"]);
+    if (!container) {
+      return footnotes;
+    }
+    const entries = Array.isArray(container.footnote)
+      ? container.footnote
+      : container.footnote
+        ? [container.footnote]
+        : [];
+    for (const entry of entries) {
+      const id = entry?.["@_id"];
+      const text =
+        typeof entry === "object" ? entry?.["#text"] : String(entry ?? "");
+      if (id && text) {
+        footnotes[String(id)] = String(text).trim();
+      }
+    }
+    return footnotes;
+  }
+
+  /** Parse derivative holdings (positions held, not transacted). */
+  parseDerivativeHoldings(): Array<Record<string, any>> {
+    const doc = this.root.ownershipDocument || this.root;
+    const holdings: Array<Record<string, any>> = [];
+    const found = this.findNestedValue(
+      this.findNestedValue(doc, ["derivativeTable"]) || {},
+      ["derivativeHolding"],
+    );
+    const list = Array.isArray(found) ? found : found ? [found] : [];
+    const value = (node: any): any =>
+      node && node.value !== undefined ? node.value : node;
+
+    for (const holdingElem of list) {
+      holdings.push({
+        securityTitle: this.getText(value(holdingElem?.securityTitle) || ""),
+        conversionOrExercisePrice: this.getFloat(
+          value(holdingElem?.conversionOrExercisePrice) || "",
+        ),
+        exerciseDate: this.getDate(value(holdingElem?.exerciseDate) || ""),
+        expirationDate: this.getDate(value(holdingElem?.expirationDate) || ""),
+        shares: this.getFloat(
+          value(
+            holdingElem?.postTransactionAmounts
+              ?.sharesOwnedFollowingTransaction,
+          ) || "",
+        ),
+        directOrIndirectOwnership: this.getText(
+          value(holdingElem?.ownershipNature?.directOrIndirectOwnership) || "",
+        ),
+        natureOfOwnership: this.getText(
+          value(holdingElem?.ownershipNature?.natureOfOwnership) || "",
+        ),
+        underlyingSecurity: {
+          title: this.getText(
+            value(holdingElem?.underlyingSecurity?.underlyingSecurityTitle) ||
+              "",
+          ),
+          shares: this.getFloat(
+            value(holdingElem?.underlyingSecurity?.underlyingSecurityShares) ||
+              "",
+          ),
+        },
+      });
+    }
+    return holdings;
+  }
+
   parseAll(): ParsedOwnershipForm {
     return {
       documentInfo: this.parseDocumentInfo(),
       issuerInfo: this.parseIssuerInfo(),
       reportingOwnerInfo: this.parseReportingOwnerInfo(),
+      reportingOwners: this.parseReportingOwners(),
       nonDerivativeTransactions: this.parseNonDerivativeTransactions(),
       nonDerivativeHoldings: this.parseNonDerivativeHoldings(),
       derivativeTransactions: this.parseDerivativeTransactions(),
+      derivativeHoldings: this.parseDerivativeHoldings(),
+      footnotes: this.parseFootnotes(),
     };
   }
 }

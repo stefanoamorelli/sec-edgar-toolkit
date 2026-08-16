@@ -15,7 +15,18 @@ export {
   ItemDefinition,
   ExtractedItem,
 } from "./item-extractor";
-export { TenKItem, TenQItem, EightKItem, FilingItem } from "./items";
+export {
+  TenKItem,
+  TenQItem,
+  EightKItem,
+  TwentyFItem,
+  FilingItem,
+} from "./items";
+export {
+  ThirteenFParser,
+  ThirteenFHolding,
+  ThirteenFCoverPage,
+} from "./thirteenf";
 
 export {
   DocumentInfo,

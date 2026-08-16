@@ -72,6 +72,23 @@ class OwnershipHolding:
         return {k: v for k, v in self.__dict__.items() if not k.startswith("_")}
 
 
+class OwnershipOwner:
+    """One reporting owner on the form."""
+
+    def __init__(self, data: Dict[str, Any]) -> None:
+        relationship = data.get("relationship") or {}
+        self.cik = data.get("cik") or ""
+        self.name = data.get("name") or ""
+        self.title = relationship.get("officer_title") or ""
+        self.is_director = bool(relationship.get("is_director"))
+        self.is_officer = bool(relationship.get("is_officer"))
+        self.is_ten_percent_owner = bool(relationship.get("is_ten_percent_owner"))
+        self.is_other = bool(relationship.get("is_other"))
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {k: v for k, v in self.__dict__.items() if not k.startswith("_")}
+
+
 class OwnershipForm(dict):
     """
     Parsed Form 3/4/5 exposing both the raw ``parse_all()`` dictionary
@@ -109,6 +126,19 @@ class OwnershipForm(dict):
         self.holdings: List[OwnershipHolding] = [
             OwnershipHolding(h) for h in parsed.get("non_derivative_holdings") or []
         ]
+        self.derivative_holdings: List[OwnershipHolding] = [
+            OwnershipHolding(h) for h in parsed.get("derivative_holdings") or []
+        ]
+
+        # Joint filings name several owners; owner_name above is the first.
+        self.owners: List[OwnershipOwner] = [
+            OwnershipOwner(o) for o in parsed.get("reporting_owners") or []
+        ]
+        if not self.owners and owner:
+            self.owners = [OwnershipOwner(owner)]
+
+        #: footnote id ("F1", ...) -> text
+        self.footnotes: Dict[str, str] = parsed.get("footnotes") or {}
 
     def to_dataframe(self):
         """Transactions as a pandas DataFrame (requires pandas)."""

@@ -495,7 +495,7 @@ class TestSecEdgarApi:
         api_client.http_client.rate_limit_delay = 0.1
 
         with patch.object(api_client.http_client.session, "get") as mock_get:
-            mock_get.return_value.json.return_value = {"data": []}
+            mock_get.return_value.content = b'{"data": []}'
             mock_get.return_value.status_code = 200
 
             start = time.time()

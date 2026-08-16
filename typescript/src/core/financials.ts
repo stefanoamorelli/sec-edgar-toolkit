@@ -48,6 +48,47 @@ export const BALANCE_SHEET_CONCEPTS = [
   "StockholdersEquity",
 ];
 
+// IFRS equivalents let annual reports from foreign private issuers
+// (20-F, 40-F) build statements from the ifrs-full taxonomy.
+export const IFRS_INCOME_STATEMENT_CONCEPTS = [
+  "Revenue",
+  "CostOfSales",
+  "GrossProfit",
+  "ProfitLossFromOperatingActivities",
+  "ProfitLossBeforeTax",
+  "IncomeTaxExpenseContinuingOperations",
+  "ProfitLoss",
+  "BasicEarningsLossPerShare",
+  "DilutedEarningsLossPerShare",
+];
+
+export const IFRS_BALANCE_SHEET_CONCEPTS = [
+  "CurrentAssets",
+  "NoncurrentAssets",
+  "Assets",
+  "CurrentLiabilities",
+  "NoncurrentLiabilities",
+  "Liabilities",
+  "Equity",
+];
+
+export const IFRS_CASH_FLOW_CONCEPTS = [
+  "CashFlowsFromUsedInOperatingActivities",
+  "CashFlowsFromUsedInInvestingActivities",
+  "CashFlowsFromUsedInFinancingActivities",
+  "CashAndCashEquivalents",
+];
+
+export const ANNUAL_FORMS = [
+  "10-K",
+  "10-K/A",
+  "20-F",
+  "20-F/A",
+  "40-F",
+  "40-F/A",
+];
+export const QUARTERLY_FORMS = ["10-Q", "10-Q/A", "6-K"];
+
 export const CASH_FLOW_CONCEPTS = [
   "NetCashProvidedByUsedInOperatingActivities",
   "NetCashProvidedByUsedInInvestingActivities",
@@ -104,14 +145,31 @@ export class Financials {
     );
   }
 
-  private collect(concepts: string[]): StatementTable {
+  private collect(
+    concepts: string[],
+    ifrsConcepts: string[] = [],
+  ): StatementTable {
     const gaap = this.facts["us-gaap"] || {};
-    const annual = this.formType.toUpperCase().startsWith("10-K");
+    const ifrs = this.facts["ifrs-full"] || {};
+    const upper = this.formType.toUpperCase();
+    const annual =
+      upper.startsWith("10-K") ||
+      upper.startsWith("20-F") ||
+      upper.startsWith("40-F");
+
+    const candidates: Array<[string, Record<string, any>]> = concepts.map(
+      (concept) => [concept, gaap],
+    );
+    if (Object.keys(ifrs).length > 0) {
+      for (const concept of ifrsConcepts) {
+        candidates.push([concept, ifrs]);
+      }
+    }
 
     // concept -> { end date -> value }
     const table = new Map<string, Record<string, number>>();
-    for (const concept of concepts) {
-      const conceptData = gaap[concept];
+    for (const [concept, taxonomyFacts] of candidates) {
+      const conceptData = taxonomyFacts[concept];
       if (!conceptData) {
         continue;
       }
@@ -122,10 +180,14 @@ export class Financials {
         const series: Record<string, number> = {};
         for (const fact of unitFacts) {
           const form = fact.form || "";
-          if (annual && form !== "10-K") {
+          if (annual && !ANNUAL_FORMS.includes(form)) {
             continue;
           }
-          if (!annual && form !== "10-Q" && form !== "10-K") {
+          if (
+            !annual &&
+            !QUARTERLY_FORMS.includes(form) &&
+            !ANNUAL_FORMS.includes(form)
+          ) {
             continue;
           }
           if (annual && fact.fp != null && fact.fp !== "FY") {
@@ -176,15 +238,18 @@ export class Financials {
   }
 
   incomeStatement(): StatementTable {
-    return this.collect(INCOME_STATEMENT_CONCEPTS);
+    return this.collect(
+      INCOME_STATEMENT_CONCEPTS,
+      IFRS_INCOME_STATEMENT_CONCEPTS,
+    );
   }
 
   balanceSheet(): StatementTable {
-    return this.collect(BALANCE_SHEET_CONCEPTS);
+    return this.collect(BALANCE_SHEET_CONCEPTS, IFRS_BALANCE_SHEET_CONCEPTS);
   }
 
   cashFlow(): StatementTable {
-    return this.collect(CASH_FLOW_CONCEPTS);
+    return this.collect(CASH_FLOW_CONCEPTS, IFRS_CASH_FLOW_CONCEPTS);
   }
 
   cashFlowStatement(): StatementTable {
