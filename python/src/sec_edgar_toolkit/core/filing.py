@@ -14,9 +14,17 @@ from typing import Any, Dict, List, Optional, Union
 
 from ..client import SecEdgarApi
 from ..parsers import OwnershipFormParser
-from ..parsers.item_extractor import ItemExtractor
+from ..parsers.item_extractor import (
+    EightKItem,
+    ItemExtractor,
+    TenKItem,
+    TenQItem,
+)
 
 logger = logging.getLogger(__name__)
+
+# Any of the typed item identifiers accepted alongside plain strings
+FilingItem = Union[TenKItem, TenQItem, EightKItem]
 
 ARCHIVES_BASE = "https://www.sec.gov/Archives/edgar/data"
 
@@ -132,7 +140,7 @@ class Filing:
     @property
     def attachments(self) -> List[Any]:
         """All documents in the filing's archive folder as Attachment objects."""
-        from .reports import Attachment
+        from .attachments import Attachment
 
         if self._attachments is None:
             self._attachments = [
@@ -267,15 +275,15 @@ class Filing:
                 parser = OwnershipFormParser(xml_content)
                 return OwnershipForm(parser.parse_all())
             elif self.form_type in ("8-K", "8-K/A"):
-                from .reports import EightK
+                from .form_8k import EightK
 
                 return EightK(self)
             elif self.form_type in ("10-K", "10-K/A"):
-                from .reports import TenK
+                from .form_10k import TenK
 
                 return TenK(self)
             elif self.form_type in ("10-Q", "10-Q/A"):
-                from .reports import TenQ
+                from .form_10q import TenQ
 
                 return TenQ(self)
             else:
@@ -308,13 +316,16 @@ class Filing:
 
         return result
 
-    def extract_items(self, item_numbers: Optional[list[str]] = None) -> Dict[str, str]:
+    def extract_items(
+        self, item_numbers: Optional[List[Union[str, "FilingItem"]]] = None
+    ) -> Dict[str, str]:
         """
         Extract individual items from the filing (e.g., Item 1, Item 1A).
 
         Args:
-            item_numbers: Optional list of specific item numbers to extract.
-                         If None, extracts all items.
+            item_numbers: Optional list of specific items to extract, as
+                strings ("1A") or item enums (``TenKItem.RISK_FACTORS``).
+                If None, extracts all items.
 
         Returns:
             Dictionary mapping item numbers to their content
@@ -337,8 +348,13 @@ class Filing:
         else:
             return self._extracted_items
 
-    def get_item(self, item_number: str) -> Optional[str]:
-        """Get a specific item from the filing (e.g., "1", "1A", "7")."""
+    def get_item(self, item_number: Union[str, "FilingItem"]) -> Optional[str]:
+        """
+        Get a specific item from the filing.
+
+        Accepts a string ("1A") or an item enum
+        (``TenKItem.RISK_FACTORS``, ``TenQItem.MDA``, ``EightKItem...``).
+        """
         items = self.extract_items([item_number])
         return items.get(item_number)
 

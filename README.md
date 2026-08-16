@@ -108,6 +108,14 @@ latest_10k = company.get_filings(form="10-K").latest()
 tenk = latest_10k.obj()
 print(tenk.risk_factors[:500])
 
+# Items are addressable by typed enums (TenKItem, TenQItem, EightKItem)
+from sec_edgar_toolkit import EightKItem, TenKItem
+
+mda = latest_10k.get_item(TenKItem.MANAGEMENT_DISCUSSION_AND_ANALYSIS)
+eightk = company.get_filings(form="8-K").latest().obj()
+if eightk.has_item(EightKItem.RESULTS_OF_OPERATIONS):
+    print("Earnings 8-K")
+
 form4 = company.get_filings(form="4").latest().obj()
 for tx in form4.transactions:
     print(form4.owner_name, tx.transaction_code, tx.shares, tx.price_per_share)

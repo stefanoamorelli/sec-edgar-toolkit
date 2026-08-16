@@ -8,8 +8,10 @@ Run with:
     SEC_EDGAR_TOOLKIT_USER_AGENT="MyApp/1.0 (me@example.com)" python object_api.py
 """
 
-from sec_edgar_toolkit.compat import (
+from sec_edgar_toolkit import (
     Company,
+    EightKItem,
+    TenKItem,
     get_current_filings,
     set_identity,
 )
@@ -31,6 +33,15 @@ def main() -> None:
     tenk = latest_10k.obj()
     if hasattr(tenk, "risk_factors"):
         print(f"Risk factors: {len(tenk.risk_factors)} characters")
+
+    # Items are addressable by typed enums as well as raw numbers
+    cybersecurity = latest_10k.get_item(TenKItem.CYBERSECURITY)
+    if cybersecurity:
+        print(f"Item 1C (Cybersecurity): {len(cybersecurity)} characters")
+
+    latest_8k = company.get_filings(form="8-K").latest()
+    if latest_8k.obj().has_item(EightKItem.RESULTS_OF_OPERATIONS):
+        print("Latest 8-K reports results of operations (Item 2.02)")
 
     # Company facts
     facts = company.get_facts()
