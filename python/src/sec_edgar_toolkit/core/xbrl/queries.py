@@ -1,10 +1,10 @@
 """
 Fact-level query primitives over the company-facts payload.
 
-- ``FactsData`` — the raw company-facts payload with a history helper
-- ``FactQuery`` — a list of fact records with chainable helpers
-- ``build_fact_records`` — normalize one concept's raw facts into records
-- ``parse_filter_expression`` — parse "concept=Assets&unit=USD" strings
+``FactsData`` is the raw company-facts payload with a history helper.
+``FactQuery`` is a list of fact records with chainable helpers.
+``build_fact_records`` normalizes one concept's raw facts into records,
+and ``parse_filter_expression`` parses "concept=Assets&unit=USD" strings.
 """
 
 from __future__ import annotations

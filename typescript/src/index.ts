@@ -3,7 +3,7 @@
  *
  * Three layers, from most to least convenient:
  *
- * 1. Object API (primary) — `Company`, `Filing`, and module-level helpers:
+ * 1. Object API (primary): `Company`, `Filing`, and module-level helpers
  *
  *    ```ts
  *    import { Company, setIdentity } from 'sec-edgar-toolkit';
@@ -13,9 +13,9 @@
  *    const latest10K = (await apple.getFilings({ form: '10-K' })).latest();
  *    ```
  *
- * 2. Fluent client — chainable query builders (`createClient`, in `./edgar`).
+ * 2. Fluent client: chainable query builders (`createClient`, in `./edgar`).
  *
- * 3. Low-level client — raw SEC JSON endpoints (`EdgarClient`).
+ * 3. Low-level client: raw SEC JSON endpoints (`EdgarClient`).
  */
 
 // Object API - primary interface

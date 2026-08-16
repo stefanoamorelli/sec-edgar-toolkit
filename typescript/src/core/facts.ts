@@ -2,9 +2,9 @@
  * Company facts wrapper exposing the high-level facts API.
  *
  * Wraps the raw `data.sec.gov/api/xbrl/companyfacts` JSON with:
- * - `.data` — the `facts` mapping (`{"us-gaap": {...}, "dei": {...}}`)
- * - `.getFact(concept)` — history for one concept as typed rows sorted
- *   by period end ascending.
+ * `.data` holds the `facts` mapping (`{"us-gaap": {...}, "dei": {...}}`).
+ * `.getFact(concept)` returns the history for one concept as typed rows
+ * sorted by period end ascending.
  */
 
 export interface FactRow {

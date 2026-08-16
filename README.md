@@ -76,11 +76,11 @@ pip install 'sec-edgar-toolkit[pandas]'  # + DataFrame output (get_fact, stateme
 pip install 'sec-edgar-toolkit[full]'    # + pandas and lxml (faster, more forgiving XML parsing)
 ```
 
-The base install covers the whole API surface — filings, form objects,
-item extraction, facts, and filing-scoped statements — using only the
-standard library plus `requests`. `pandas` is needed only by the
-DataFrame-returning helpers; `lxml` is optional and used for XML parsing
-when present (the standard library is the fallback).
+The base install covers the whole API surface with only `requests` as a
+dependency: filings, form objects, item extraction, facts, and
+filing-scoped statements. Only the DataFrame-returning helpers need
+`pandas`. When `lxml` is present it is used for XML parsing, and the
+standard library handles it otherwise.
 
 ## Quick Start
 

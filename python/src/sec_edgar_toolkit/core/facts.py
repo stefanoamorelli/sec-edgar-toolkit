@@ -2,9 +2,9 @@
 Company facts wrapper exposing the high-level facts API.
 
 Wraps the raw ``data.sec.gov/api/xbrl/companyfacts`` JSON with:
-- ``.data`` — the ``facts`` mapping (``{"us-gaap": {...}, "dei": {...}}``)
-- ``.get_fact(concept)`` — history for one concept as a pandas DataFrame
-  with columns ``fy, fp, value, unit, form, end, filed``.
+``.data`` holds the ``facts`` mapping (``{"us-gaap": {...}, "dei": {...}}``).
+``.get_fact(concept)`` returns the history for one concept as a pandas
+DataFrame with columns ``fy, fp, value, unit, form, end, filed``.
 """
 
 from __future__ import annotations

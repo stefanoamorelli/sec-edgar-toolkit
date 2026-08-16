@@ -3,7 +3,7 @@ SEC EDGAR Toolkit - toolkit for accessing SEC EDGAR filing data.
 
 Three layers, from most to least convenient:
 
-1. Object API (primary) — ``Company``, ``Filing``, and module-level helpers:
+1. Object API (primary): ``Company``, ``Filing``, and module-level helpers
 
        from sec_edgar_toolkit import Company, set_identity
 
@@ -11,14 +11,14 @@ Three layers, from most to least convenient:
        apple = Company("AAPL")
        latest_10k = apple.get_filings(form="10-K").latest()
 
-2. Fluent client — chainable query builders:
+2. Fluent client: chainable query builders
 
        from sec_edgar_toolkit import create_client
 
        client = create_client("MyApp/1.0 (me@example.com)")
        apple = client.companies.lookup("AAPL")
 
-3. Low-level client — raw SEC JSON endpoints:
+3. Low-level client: raw SEC JSON endpoints
 
        from sec_edgar_toolkit import SecEdgarApi
 

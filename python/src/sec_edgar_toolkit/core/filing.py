@@ -380,7 +380,7 @@ class Filing:
 
         Falls back to the filing-details payload and common aliases.
         """
-        # Common aliases first — they need no network round-trip.
+        # Check the aliases first because they need no network round-trip.
         field_mapping = {
             "date": "filing_date",
             "form": "form_type",
