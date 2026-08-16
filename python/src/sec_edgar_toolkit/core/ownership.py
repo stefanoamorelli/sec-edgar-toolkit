@@ -112,6 +112,8 @@ class OwnershipForm(dict):
 
     def to_dataframe(self):
         """Transactions as a pandas DataFrame (requires pandas)."""
-        import pandas as pd
+        from ..utils.optional_deps import require_pandas
+
+        pd = require_pandas()
 
         return pd.DataFrame([tx.to_dict() for tx in self.transactions])

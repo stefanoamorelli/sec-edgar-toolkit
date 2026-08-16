@@ -4,12 +4,12 @@ from ..parsers.item_extractor import EightKItem, TenKItem, TenQItem
 from .attachments import Attachment
 from .collections import Filings
 from .company import Company
-from .form_8k import EightK
-from .form_10k import TenK
-from .form_10q import TenQ
 from .facts import CompanyFacts
 from .filing import Filing, FilingItem
 from .financials import Financials
+from .form_8k import EightK
+from .form_10k import TenK
+from .form_10q import TenQ
 from .global_functions import (
     find_company,
     get_current_filings,

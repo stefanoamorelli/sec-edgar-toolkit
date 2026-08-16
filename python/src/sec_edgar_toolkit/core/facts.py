@@ -44,7 +44,9 @@ class CompanyFacts:
         sorted by period end ascending. Returns None when the concept is
         not reported.
         """
-        import pandas as pd
+        from ..utils.optional_deps import require_pandas
+
+        pd = require_pandas()
 
         concept_data = self._find_concept(concept)
         if not concept_data:

@@ -96,7 +96,9 @@ class Financials:
         Build a DataFrame: rows = concepts, columns = period end dates
         (most recent first), using facts reported on this form type.
         """
-        import pandas as pd
+        from ..utils.optional_deps import require_pandas
+
+        pd = require_pandas()
 
         gaap = self._facts.get("us-gaap") or {}
         annual = self.form_type.upper().startswith("10-K")

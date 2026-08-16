@@ -20,7 +20,9 @@ class FactsData(dict):
         History of one concept as a pandas DataFrame with columns
         ``value, unit, period_end, period_instant, filed, form``.
         """
-        import pandas as pd
+        from ...utils.optional_deps import require_pandas
+
+        pd = require_pandas()
 
         concept_data = (self.get("facts", {}) or {}).get(taxonomy, {}).get(concept)
         if not concept_data:
@@ -65,7 +67,9 @@ class FactQuery(list):
 
     def to_dataframe(self):
         """Results as a pandas DataFrame."""
-        import pandas as pd
+        from ...utils.optional_deps import require_pandas
+
+        pd = require_pandas()
 
         return pd.DataFrame(list(self))
 

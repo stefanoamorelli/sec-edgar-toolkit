@@ -36,12 +36,17 @@ classifiers = [
 ]
 dependencies = [
   "requests>=2.31.0",
-  "lxml>=4.9.0",
-  "pandas>=2.0.0",
 ]
 
 [project.optional-dependencies]
+# DataFrame-returning helpers (get_fact, statement DataFrames, to_dataframe)
+pandas = ["pandas>=2.0.0"]
+# Faster, more forgiving XML parsing (stdlib ElementTree used otherwise)
+lxml = ["lxml>=4.9.0"]
+full = ["pandas>=2.0.0", "lxml>=4.9.0"]
 dev = [
+  "pandas>=2.0.0",
+  "lxml>=4.9.0",
   "pytest>=7.4.0",
   "pytest-cov>=4.1.0",
   "pytest-asyncio>=0.21.0",

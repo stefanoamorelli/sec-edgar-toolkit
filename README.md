@@ -71,8 +71,16 @@ yarn add sec-edgar-toolkit
 ### Python
 
 ```bash
-pip install sec-edgar-toolkit
+pip install sec-edgar-toolkit            # minimal: requests is the only dependency
+pip install 'sec-edgar-toolkit[pandas]'  # + DataFrame output (get_fact, statement DataFrames)
+pip install 'sec-edgar-toolkit[full]'    # + pandas and lxml (faster, more forgiving XML parsing)
 ```
+
+The base install covers the whole API surface — filings, form objects,
+item extraction, facts, and filing-scoped statements — using only the
+standard library plus `requests`. `pandas` is needed only by the
+DataFrame-returning helpers; `lxml` is optional and used for XML parsing
+when present (the standard library is the fallback).
 
 ## Quick Start
 
