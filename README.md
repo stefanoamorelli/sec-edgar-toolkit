@@ -93,18 +93,51 @@ const riskFactors = await filing.getItem("1A"); // Get specific item
 ### Python
 
 ```python
+from sec_edgar_toolkit import Company, set_identity
+
+set_identity("YourApp/1.0 (your.email@example.com)")
+
+# Companies resolve by ticker or CIK
+company = Company("AAPL")
+print(company.name, company.cik, company.sic_description)
+
+# Filings come back newest first, with .latest()
+latest_10k = company.get_filings(form="10-K").latest()
+
+# Form-specific objects: TenK/TenQ sections, EightK events, Form 3/4/5 ownership
+tenk = latest_10k.obj()
+print(tenk.risk_factors[:500])
+
+form4 = company.get_filings(form="4").latest().obj()
+for tx in form4.transactions:
+    print(form4.owner_name, tx.transaction_code, tx.shares, tx.price_per_share)
+
+# XBRL: company facts and filing-scoped statements (including segments)
+facts = company.get_facts()
+revenue = facts.get_fact("RevenueFromContractWithCustomerExcludingAssessedTax")
+
+xbrl = latest_10k.xbrl()
+statements = xbrl.get_all_statements()
+
+# Financial statements as DataFrames
+financials = company.get_financials()
+income = financials.income_statement()
+
+# Global near-real-time filings feed
+from sec_edgar_toolkit import get_current_filings
+
+for filing in get_current_filings(form="8-K", page_size=10):
+    print(filing.filing_date, filing.company_name, filing.form_type)
+```
+
+A chainable query-builder client is also available:
+
+```python
 from sec_edgar_toolkit import create_client
 
 client = create_client("YourApp/1.0 (your.email@example.com)")
-
-# Find company and get filings
 company = client.companies.lookup("AAPL")
 filings = company.filings.form_types(["10-K"]).recent(5).fetch()
-
-# Extract items from filing
-filing = filings[0]
-items = filing.extract_items()  # Get all items
-risk_factors = filing.get_item("1A")  # Get specific item
 ```
 
 ### Item Extraction

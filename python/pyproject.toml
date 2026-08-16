@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "sec-edgar-toolkit"
-version = "0.1.1"
+version = "0.2.0"
 description = "Open source toolkit to facilitate working with the SEC EDGAR database"
 readme = "README.md"
 requires-python = ">=3.8"
@@ -68,7 +68,7 @@ line-length = 88
 target-version = ['py38']
 
 [tool.mypy]
-python_version = "3.9"
+python_version = "3.10"
 warn_return_any = false
 warn_unused_configs = true
 ignore_missing_imports = true

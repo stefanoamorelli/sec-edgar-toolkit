@@ -182,13 +182,21 @@ class SecEdgarApi:
         """Get specific XBRL concept data for a company."""
         return self.xbrl.get_company_concept(cik, taxonomy, tag, unit)
 
+    def get_company_submissions_page(self, page_name: str) -> Dict[str, Any]:
+        """Fetch one older-history submissions page (from ``filings.files``)."""
+        return self.filings.get_company_submissions_page(page_name)
+
     def get_recent_filings(
         self,
         form_type: Optional[Union[str, list]] = None,
         limit: int = 40,
+        owner: str = "include",
+        start: int = 0,
     ) -> list:
         """Get recent filings across all companies via the SEC EDGAR Atom feed."""
-        return self.filings.get_recent_filings(form_type=form_type, limit=limit)
+        return self.filings.get_recent_filings(
+            form_type=form_type, limit=limit, owner=owner, start=start
+        )
 
     def get_frames(
         self,
