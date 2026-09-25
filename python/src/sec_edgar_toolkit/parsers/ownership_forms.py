@@ -335,22 +335,33 @@ class OwnershipFormParser:
             if security is not None:
                 holding["security_title"] = self._get_text(security.find("value"))
 
-            # Shares owned
-            shares = holding_elem.find("sharesOwned")
+            # Shares owned: filed documents report the position under
+            # postTransactionAmounts; the flat sharesOwned layout is kept.
+            shares = holding_elem.find(
+                "postTransactionAmounts/sharesOwnedFollowingTransaction/value"
+            )
+            if shares is None:
+                shares = holding_elem.find("sharesOwned/value")
             if shares is not None:
-                holding["shares_owned"] = self._get_float(shares.find("value"))
+                holding["shares_owned"] = self._get_float(shares)
 
-            # Direct or indirect ownership
-            ownership_type = holding_elem.find("directOrIndirectOwnership")
+            # Direct or indirect ownership, nested under ownershipNature in
+            # filed documents and flat in the older layout.
+            ownership_type = holding_elem.find(
+                "ownershipNature/directOrIndirectOwnership/value"
+            )
+            if ownership_type is None:
+                ownership_type = holding_elem.find("directOrIndirectOwnership/value")
             if ownership_type is not None:
-                holding["direct_or_indirect_ownership"] = self._get_text(
-                    ownership_type.find("value")
-                )
+                holding["direct_or_indirect_ownership"] = self._get_text(ownership_type)
 
             # Nature of ownership
             nature = holding_elem.find("ownershipNature")
             if nature is not None:
-                holding["nature_of_ownership"] = self._get_text(nature.find("value"))
+                nature_value = nature.find("natureOfOwnership/value")
+                holding["nature_of_ownership"] = self._get_text(
+                    nature_value if nature_value is not None else nature.find("value")
+                )
 
             holdings.append(holding)
 

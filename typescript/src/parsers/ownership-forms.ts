@@ -440,14 +440,20 @@ export class OwnershipFormParser {
         holding.securityTitle = this.getText(security.value || security);
       }
 
-      // Shares owned
-      const shares = holdingElem.sharesOwned;
+      // Shares owned: filed documents report the position under
+      // postTransactionAmounts; the flat sharesOwned layout is kept.
+      const shares =
+        holdingElem.postTransactionAmounts?.sharesOwnedFollowingTransaction ||
+        holdingElem.sharesOwned;
       if (shares) {
         holding.sharesOwned = this.getFloat(shares.value || shares);
       }
 
-      // Direct or indirect ownership
-      const ownershipType = holdingElem.directOrIndirectOwnership;
+      // Direct or indirect ownership, nested under ownershipNature in filed
+      // documents and flat in the older layout.
+      const ownershipType =
+        holdingElem.ownershipNature?.directOrIndirectOwnership ||
+        holdingElem.directOrIndirectOwnership;
       if (ownershipType) {
         holding.directOrIndirectOwnership = this.getText(
           ownershipType.value || ownershipType,
@@ -457,7 +463,12 @@ export class OwnershipFormParser {
       // Nature of ownership
       const nature = holdingElem.ownershipNature;
       if (nature) {
-        holding.natureOfOwnership = this.getText(nature.value || nature);
+        const natureValue = nature.natureOfOwnership;
+        holding.natureOfOwnership = this.getText(
+          natureValue
+            ? natureValue.value || natureValue
+            : nature.value || nature,
+        );
       }
 
       holdings.push(holding);

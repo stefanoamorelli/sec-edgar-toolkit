@@ -7,6 +7,7 @@ import {
   Form4Parser,
   Form5Parser,
 } from "../parsers/ownership-forms";
+import { OwnershipHolding } from "../core/ownership";
 
 describe("OwnershipFormParser", () => {
   const sampleForm4XML = `<?xml version="1.0" encoding="UTF-8"?>
@@ -368,5 +369,61 @@ describe("OwnershipFormParser derivative transaction details", () => {
       title: "Common Stock",
       shares: 30104,
     });
+  });
+});
+
+describe("OwnershipFormParser holding layouts", () => {
+  const filedHoldingXML = `<?xml version="1.0" encoding="UTF-8"?>
+<ownershipDocument>
+    <schemaVersion>X0508</schemaVersion>
+    <documentType>4</documentType>
+    <periodOfReport>2026-06-30</periodOfReport>
+    <issuer>
+        <issuerCik>0000320193</issuerCik>
+        <issuerName>Apple Inc.</issuerName>
+        <issuerTradingSymbol>AAPL</issuerTradingSymbol>
+    </issuer>
+    <reportingOwner>
+        <reportingOwnerId>
+            <rptOwnerCik>0001214128</rptOwnerCik>
+            <rptOwnerName>COOK TIMOTHY D</rptOwnerName>
+        </reportingOwnerId>
+        <reportingOwnerRelationship>
+            <isDirector>1</isDirector>
+            <isOfficer>1</isOfficer>
+            <officerTitle>Chief Executive Officer</officerTitle>
+        </reportingOwnerRelationship>
+    </reportingOwner>
+    <nonDerivativeTable>
+        <nonDerivativeHolding>
+            <securityTitle><value>Common Stock</value></securityTitle>
+            <postTransactionAmounts>
+                <sharesOwnedFollowingTransaction><value>56000</value></sharesOwnedFollowingTransaction>
+            </postTransactionAmounts>
+            <ownershipNature>
+                <directOrIndirectOwnership><value>I</value></directOrIndirectOwnership>
+                <natureOfOwnership><value>By Spouse</value></natureOfOwnership>
+            </ownershipNature>
+        </nonDerivativeHolding>
+    </nonDerivativeTable>
+</ownershipDocument>`;
+
+  it("reads shares and ownership from the filed layout", () => {
+    const parser = new OwnershipFormParser(filedHoldingXML);
+    const holding = parser.parseNonDerivativeHoldings()[0];
+
+    expect(holding.securityTitle).toBe("Common Stock");
+    expect(holding.sharesOwned).toBe(56000);
+    expect(holding.directOrIndirectOwnership).toBe("I");
+    expect(holding.natureOfOwnership).toBe("By Spouse");
+  });
+
+  it("maps derivative holding shares onto OwnershipHolding", () => {
+    const holding = new OwnershipHolding({
+      securityTitle: "Restricted Stock Unit",
+      shares: 66600,
+    } as any);
+
+    expect(holding.sharesOwned).toBe(66600);
   });
 });

@@ -494,3 +494,43 @@ class TestOwnershipNatureLayouts:
 
         assert transaction["direct_or_indirect_ownership"] == "I"
         assert transaction["nature_of_ownership"] == "By Trust"
+
+
+class TestHoldingLayouts:
+    """Filed forms report a holding's position under postTransactionAmounts
+    and its ownership under ownershipNature; the fixture uses the flat form."""
+
+    FILED_HOLDING = (
+        "<nonDerivativeHolding><securityTitle><value>Common Stock</value>"
+        "</securityTitle><postTransactionAmounts>"
+        "<sharesOwnedFollowingTransaction><value>56000</value>"
+        "</sharesOwnedFollowingTransaction></postTransactionAmounts>"
+        "<ownershipNature><directOrIndirectOwnership><value>I</value>"
+        "</directOrIndirectOwnership><natureOfOwnership><value>By Spouse</value>"
+        "</natureOfOwnership></ownershipNature></nonDerivativeHolding>"
+    )
+
+    def test_non_derivative_holding_filed_layout(self, form4_xml):
+        import re
+
+        xml = re.sub(
+            r"<nonDerivativeHolding>.*?</nonDerivativeHolding>",
+            self.FILED_HOLDING,
+            form4_xml,
+            flags=re.S,
+        )
+        holding = OwnershipFormParser(xml).parse_non_derivative_holdings()[0]
+
+        assert holding["security_title"] == "Common Stock"
+        assert holding["shares_owned"] == 56000.0
+        assert holding["direct_or_indirect_ownership"] == "I"
+        assert holding["nature_of_ownership"] == "By Spouse"
+
+    def test_ownership_form_derivative_holding_reports_shares(self, form4_xml):
+        from sec_edgar_toolkit.core.ownership import OwnershipHolding
+
+        holding = OwnershipHolding(
+            {"security_title": "Employee Stock Option", "shares": 4500.0}
+        )
+
+        assert holding.shares_owned == 4500.0
