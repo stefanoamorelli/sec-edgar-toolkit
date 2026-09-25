@@ -146,6 +146,14 @@ export class OwnershipFormParser {
   }
 
   /**
+   * Read an xs:boolean element; filing agents emit true/false or 1/0.
+   */
+  private getBool(element: any): boolean {
+    const text = this.getText(element).toLowerCase();
+    return text === "true" || text === "1";
+  }
+
+  /**
    * Extract date from XML element and convert to Date object.
    */
   private getDate(element: any): Date | null {
@@ -195,8 +203,7 @@ export class OwnershipFormParser {
       periodOfReport: this.getDate(periodOfReport),
       dateOfOriginalSubmission: this.getDate(dateOfOriginalSubmission),
       ...(notSubjectToSection16 !== null && {
-        notSubjectToSection16:
-          this.getText(notSubjectToSection16).toLowerCase() === "true",
+        notSubjectToSection16: this.getBool(notSubjectToSection16),
       }),
     };
   }
@@ -269,15 +276,10 @@ export class OwnershipFormParser {
     const relationship = reportingOwner.reportingOwnerRelationship;
     if (relationship) {
       ownerInfo.relationship = {
-        isDirector:
-          this.getText(relationship.isDirector || "").toLowerCase() === "true",
-        isOfficer:
-          this.getText(relationship.isOfficer || "").toLowerCase() === "true",
-        isTenPercentOwner:
-          this.getText(relationship.isTenPercentOwner || "").toLowerCase() ===
-          "true",
-        isOther:
-          this.getText(relationship.isOther || "").toLowerCase() === "true",
+        isDirector: this.getBool(relationship.isDirector),
+        isOfficer: this.getBool(relationship.isOfficer),
+        isTenPercentOwner: this.getBool(relationship.isTenPercentOwner),
+        isOther: this.getBool(relationship.isOther),
         officerTitle: this.getText(relationship.officerTitle || ""),
         otherText: this.getText(relationship.otherText || ""),
       };
@@ -351,40 +353,59 @@ export class OwnershipFormParser {
         );
       }
 
-      // Transaction coding
-      const coding = transElem.transactionCoding;
-      if (coding) {
-        transaction.formType = this.getText(coding.transactionFormType);
-        transaction.code = this.getText(coding.transactionCode);
-        transaction.equitySwapInvolved =
-          this.getText(coding.equitySwapInvolved).toLowerCase() === "true";
-      }
-
-      // Post-transaction amounts
-      const postTrans = transElem.postTransactionAmounts;
-      if (postTrans) {
-        transaction.sharesOwnedFollowingTransaction = this.getFloat(
-          postTrans.sharesOwnedFollowingTransaction?.value ||
-            postTrans.sharesOwnedFollowingTransaction,
-        );
-        transaction.directOrIndirectOwnership = this.getText(
-          postTrans.directOrIndirectOwnership?.value ||
-            postTrans.directOrIndirectOwnership,
-        );
-      }
-
-      // Ownership nature
-      const ownership = transElem.ownershipNature;
-      if (ownership) {
-        transaction.natureOfOwnership = this.getText(
-          ownership.value || ownership,
-        );
-      }
+      this.parseTransactionDetails(transElem, transaction);
 
       transactions.push(transaction);
     }
 
     return transactions;
+  }
+
+  /**
+   * Fill the coding, post-transaction and ownership blocks.
+   *
+   * Non-derivative and derivative rows share these three blocks. Filed
+   * documents put directOrIndirectOwnership and natureOfOwnership under
+   * ownershipNature; older fixtures put the former under
+   * postTransactionAmounts and the latter directly as a value, so both
+   * layouts are read.
+   */
+  private parseTransactionDetails(
+    transElem: any,
+    transaction: NonDerivativeTransaction | DerivativeTransaction,
+  ): void {
+    const coding = transElem.transactionCoding;
+    if (coding) {
+      transaction.formType = this.getText(coding.transactionFormType);
+      transaction.code = this.getText(coding.transactionCode);
+      transaction.equitySwapInvolved = this.getBool(coding.equitySwapInvolved);
+    }
+
+    const postTrans = transElem.postTransactionAmounts;
+    if (postTrans) {
+      transaction.sharesOwnedFollowingTransaction = this.getFloat(
+        postTrans.sharesOwnedFollowingTransaction?.value ||
+          postTrans.sharesOwnedFollowingTransaction,
+      );
+      transaction.directOrIndirectOwnership = this.getText(
+        postTrans.directOrIndirectOwnership?.value ||
+          postTrans.directOrIndirectOwnership,
+      );
+    }
+
+    const ownership = transElem.ownershipNature;
+    if (ownership) {
+      const direct = ownership.directOrIndirectOwnership;
+      if (direct) {
+        transaction.directOrIndirectOwnership = this.getText(
+          direct.value || direct,
+        );
+      }
+      const nature = ownership.natureOfOwnership;
+      transaction.natureOfOwnership = this.getText(
+        nature ? nature.value || nature : ownership.value || ownership,
+      );
+    }
   }
 
   /**
@@ -419,14 +440,20 @@ export class OwnershipFormParser {
         holding.securityTitle = this.getText(security.value || security);
       }
 
-      // Shares owned
-      const shares = holdingElem.sharesOwned;
+      // Shares owned: filed documents report the position under
+      // postTransactionAmounts; the flat sharesOwned layout is kept.
+      const shares =
+        holdingElem.postTransactionAmounts?.sharesOwnedFollowingTransaction ||
+        holdingElem.sharesOwned;
       if (shares) {
         holding.sharesOwned = this.getFloat(shares.value || shares);
       }
 
-      // Direct or indirect ownership
-      const ownershipType = holdingElem.directOrIndirectOwnership;
+      // Direct or indirect ownership, nested under ownershipNature in filed
+      // documents and flat in the older layout.
+      const ownershipType =
+        holdingElem.ownershipNature?.directOrIndirectOwnership ||
+        holdingElem.directOrIndirectOwnership;
       if (ownershipType) {
         holding.directOrIndirectOwnership = this.getText(
           ownershipType.value || ownershipType,
@@ -436,7 +463,12 @@ export class OwnershipFormParser {
       // Nature of ownership
       const nature = holdingElem.ownershipNature;
       if (nature) {
-        holding.natureOfOwnership = this.getText(nature.value || nature);
+        const natureValue = nature.natureOfOwnership;
+        holding.natureOfOwnership = this.getText(
+          natureValue
+            ? natureValue.value || natureValue
+            : nature.value || nature,
+        );
       }
 
       holdings.push(holding);
@@ -503,11 +535,17 @@ export class OwnershipFormParser {
         transaction.totalValue = this.getFloat(
           amounts.transactionTotalValue?.value || amounts.transactionTotalValue,
         );
+        transaction.pricePerShare = this.getFloat(
+          amounts.transactionPricePerShare?.value ||
+            amounts.transactionPricePerShare,
+        );
         transaction.acquiredDisposedCode = this.getText(
           amounts.transactionAcquiredDisposedCode?.value ||
             amounts.transactionAcquiredDisposedCode,
         );
       }
+
+      this.parseTransactionDetails(transElem, transaction);
 
       // Exercise date and expiration date
       const exerciseDate = transElem.exerciseDate;
@@ -586,15 +624,10 @@ export class OwnershipFormParser {
     const relationship = ownerElem?.reportingOwnerRelationship;
     if (relationship) {
       ownerInfo.relationship = {
-        isDirector:
-          this.getText(relationship.isDirector || "").toLowerCase() === "true",
-        isOfficer:
-          this.getText(relationship.isOfficer || "").toLowerCase() === "true",
-        isTenPercentOwner:
-          this.getText(relationship.isTenPercentOwner || "").toLowerCase() ===
-          "true",
-        isOther:
-          this.getText(relationship.isOther || "").toLowerCase() === "true",
+        isDirector: this.getBool(relationship.isDirector),
+        isOfficer: this.getBool(relationship.isOfficer),
+        isTenPercentOwner: this.getBool(relationship.isTenPercentOwner),
+        isOther: this.getBool(relationship.isOther),
         officerTitle: this.getText(relationship.officerTitle || ""),
         otherText: this.getText(relationship.otherText || ""),
       };

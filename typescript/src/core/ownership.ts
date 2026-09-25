@@ -80,7 +80,11 @@ export class OwnershipHolding {
 
   constructor(data: NonDerivativeHolding) {
     this.securityTitle = data.securityTitle || "";
-    this.sharesOwned = data.sharesOwned ?? null;
+    // Derivative holdings report the position as "shares".
+    this.sharesOwned =
+      data.sharesOwned ??
+      ((data as unknown as Record<string, unknown>).shares as number) ??
+      null;
     this.ownershipType = data.directOrIndirectOwnership || null;
     this.ownershipNature =
       data.natureOfOwnership || data.directOrIndirectOwnership || null;

@@ -62,7 +62,11 @@ class OwnershipHolding:
 
     def __init__(self, data: Dict[str, Any]) -> None:
         self.security_title = data.get("security_title")
-        self.shares_owned = data.get("shares_owned")
+        shares = data.get("shares_owned")
+        if shares is None:
+            # Derivative holdings report the position as "shares".
+            shares = data.get("shares")
+        self.shares_owned = shares
         self.ownership_type = data.get("direct_or_indirect_ownership")
         self.ownership_nature = data.get("nature_of_ownership") or data.get(
             "direct_or_indirect_ownership"

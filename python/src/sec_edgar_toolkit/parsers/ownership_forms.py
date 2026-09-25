@@ -90,6 +90,10 @@ class OwnershipFormParser:
         except ValueError:
             return default
 
+    def _get_bool(self, element: Optional[Any]) -> bool:
+        """Read an xs:boolean element; filing agents emit true/false or 1/0."""
+        return self._get_text(element).strip().lower() in ("true", "1")
+
     def _get_date(self, element: Optional[Any]) -> Optional[datetime]:
         """Extract date from XML element and convert to datetime object."""
         date_text = self._get_text(element)
@@ -132,9 +136,7 @@ class OwnershipFormParser:
         # Add notSubjectToSection16 flag if present
         not_subject_elem = self.root.find(".//notSubjectToSection16")
         if not_subject_elem is not None:
-            doc_info["not_subject_to_section16"] = (
-                self._get_text(not_subject_elem).lower() == "true"
-            )
+            doc_info["not_subject_to_section16"] = self._get_bool(not_subject_elem)
 
         return doc_info
 
@@ -210,16 +212,12 @@ class OwnershipFormParser:
         relationship = owner_elem.find("reportingOwnerRelationship")
         if relationship is not None:
             owner_info["relationship"] = {
-                "is_director": self._get_text(relationship.find("isDirector")).lower()
-                == "true",
-                "is_officer": self._get_text(relationship.find("isOfficer")).lower()
-                == "true",
-                "is_ten_percent_owner": self._get_text(
+                "is_director": self._get_bool(relationship.find("isDirector")),
+                "is_officer": self._get_bool(relationship.find("isOfficer")),
+                "is_ten_percent_owner": self._get_bool(
                     relationship.find("isTenPercentOwner")
-                ).lower()
-                == "true",
-                "is_other": self._get_text(relationship.find("isOther")).lower()
-                == "true",
+                ),
+                "is_other": self._get_bool(relationship.find("isOther")),
                 "officer_title": self._get_text(relationship.find("officerTitle")),
                 "other_text": self._get_text(relationship.find("otherText")),
             }
@@ -267,44 +265,58 @@ class OwnershipFormParser:
                     }
                 )
 
-            # Transaction coding
-            coding = transaction_elem.find("transactionCoding")
-            if coding is not None:
-                transaction.update(
-                    {
-                        "form_type": self._get_text(coding.find("transactionFormType")),
-                        "code": self._get_text(coding.find("transactionCode")),
-                        "equity_swap_involved": self._get_text(
-                            coding.find("equitySwapInvolved")
-                        ).lower()
-                        == "true",
-                    }
-                )
-
-            # Post-transaction amounts
-            post_trans = transaction_elem.find("postTransactionAmounts")
-            if post_trans is not None:
-                transaction.update(
-                    {
-                        "shares_owned_following_transaction": self._get_float(
-                            post_trans.find("sharesOwnedFollowingTransaction/value")
-                        ),
-                        "direct_or_indirect_ownership": self._get_text(
-                            post_trans.find("directOrIndirectOwnership/value")
-                        ),
-                    }
-                )
-
-            # Ownership nature
-            ownership = transaction_elem.find("ownershipNature")
-            if ownership is not None:
-                transaction["nature_of_ownership"] = self._get_text(
-                    ownership.find("value")
-                )
+            self._parse_transaction_details(transaction_elem, transaction)
 
             transactions.append(transaction)
 
         return transactions
+
+    def _parse_transaction_details(
+        self, transaction_elem: Any, transaction: Dict[str, Any]
+    ) -> None:
+        """
+        Fill the coding, post-transaction and ownership blocks.
+
+        Non-derivative and derivative rows share these three blocks. Filed
+        documents put ``directOrIndirectOwnership`` and ``natureOfOwnership``
+        under ``ownershipNature``; older fixtures put the former under
+        ``postTransactionAmounts`` and the latter directly as a ``value``, so
+        both layouts are read.
+        """
+        coding = transaction_elem.find("transactionCoding")
+        if coding is not None:
+            transaction.update(
+                {
+                    "form_type": self._get_text(coding.find("transactionFormType")),
+                    "code": self._get_text(coding.find("transactionCode")),
+                    "equity_swap_involved": self._get_bool(
+                        coding.find("equitySwapInvolved")
+                    ),
+                }
+            )
+
+        post_trans = transaction_elem.find("postTransactionAmounts")
+        if post_trans is not None:
+            transaction.update(
+                {
+                    "shares_owned_following_transaction": self._get_float(
+                        post_trans.find("sharesOwnedFollowingTransaction/value")
+                    ),
+                    "direct_or_indirect_ownership": self._get_text(
+                        post_trans.find("directOrIndirectOwnership/value")
+                    ),
+                }
+            )
+
+        ownership = transaction_elem.find("ownershipNature")
+        if ownership is not None:
+            direct = ownership.find("directOrIndirectOwnership/value")
+            if direct is not None:
+                transaction["direct_or_indirect_ownership"] = self._get_text(direct)
+            nature = ownership.find("natureOfOwnership/value")
+            transaction["nature_of_ownership"] = self._get_text(
+                nature if nature is not None else ownership.find("value")
+            )
 
     def parse_non_derivative_holdings(self) -> List[Dict[str, Any]]:
         """
@@ -323,22 +335,33 @@ class OwnershipFormParser:
             if security is not None:
                 holding["security_title"] = self._get_text(security.find("value"))
 
-            # Shares owned
-            shares = holding_elem.find("sharesOwned")
+            # Shares owned: filed documents report the position under
+            # postTransactionAmounts; the flat sharesOwned layout is kept.
+            shares = holding_elem.find(
+                "postTransactionAmounts/sharesOwnedFollowingTransaction/value"
+            )
+            if shares is None:
+                shares = holding_elem.find("sharesOwned/value")
             if shares is not None:
-                holding["shares_owned"] = self._get_float(shares.find("value"))
+                holding["shares_owned"] = self._get_float(shares)
 
-            # Direct or indirect ownership
-            ownership_type = holding_elem.find("directOrIndirectOwnership")
+            # Direct or indirect ownership, nested under ownershipNature in
+            # filed documents and flat in the older layout.
+            ownership_type = holding_elem.find(
+                "ownershipNature/directOrIndirectOwnership/value"
+            )
+            if ownership_type is None:
+                ownership_type = holding_elem.find("directOrIndirectOwnership/value")
             if ownership_type is not None:
-                holding["direct_or_indirect_ownership"] = self._get_text(
-                    ownership_type.find("value")
-                )
+                holding["direct_or_indirect_ownership"] = self._get_text(ownership_type)
 
             # Nature of ownership
             nature = holding_elem.find("ownershipNature")
             if nature is not None:
-                holding["nature_of_ownership"] = self._get_text(nature.find("value"))
+                nature_value = nature.find("natureOfOwnership/value")
+                holding["nature_of_ownership"] = self._get_text(
+                    nature_value if nature_value is not None else nature.find("value")
+                )
 
             holdings.append(holding)
 
@@ -386,11 +409,16 @@ class OwnershipFormParser:
                         "total_value": self._get_float(
                             amounts.find("transactionTotalValue/value")
                         ),
+                        "price_per_share": self._get_float(
+                            amounts.find("transactionPricePerShare/value")
+                        ),
                         "acquired_disposed_code": self._get_text(
                             amounts.find("transactionAcquiredDisposedCode/value")
                         ),
                     }
                 )
+
+            self._parse_transaction_details(transaction_elem, transaction)
 
             # Exercise date and expiration date
             exercise_date = transaction_elem.find("exerciseDate")
