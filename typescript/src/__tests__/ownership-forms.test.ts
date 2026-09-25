@@ -215,3 +215,158 @@ describe("Form5Parser", () => {
     consoleSpy.mockRestore();
   });
 });
+
+describe("OwnershipFormParser boolean encodings", () => {
+  const numericForm4XML = `<?xml version="1.0" encoding="UTF-8"?>
+<ownershipDocument>
+    <schemaVersion>X0306</schemaVersion>
+    <documentType>4</documentType>
+    <periodOfReport>2026-09-22</periodOfReport>
+    <notSubjectToSection16>0</notSubjectToSection16>
+    <issuer>
+        <issuerCik>0001318605</issuerCik>
+        <issuerName>Tesla, Inc.</issuerName>
+        <issuerTradingSymbol>TSLA</issuerTradingSymbol>
+    </issuer>
+    <reportingOwner>
+        <reportingOwnerId>
+            <rptOwnerCik>0001494730</rptOwnerCik>
+            <rptOwnerName>Musk Elon</rptOwnerName>
+        </reportingOwnerId>
+        <reportingOwnerRelationship>
+            <isDirector>1</isDirector>
+            <isOfficer>1</isOfficer>
+            <isTenPercentOwner>1</isTenPercentOwner>
+            <isOther>0</isOther>
+            <officerTitle>CEO</officerTitle>
+        </reportingOwnerRelationship>
+    </reportingOwner>
+    <nonDerivativeTable>
+        <nonDerivativeTransaction>
+            <securityTitle><value>Common Stock</value></securityTitle>
+            <transactionDate><value>2026-09-22</value></transactionDate>
+            <transactionCoding>
+                <transactionFormType>4</transactionFormType>
+                <transactionCode>S</transactionCode>
+                <equitySwapInvolved>1</equitySwapInvolved>
+            </transactionCoding>
+            <transactionAmounts>
+                <transactionShares><value>100</value></transactionShares>
+                <transactionPricePerShare><value>250.5</value></transactionPricePerShare>
+                <transactionAcquiredDisposedCode><value>D</value></transactionAcquiredDisposedCode>
+            </transactionAmounts>
+            <postTransactionAmounts>
+                <sharesOwnedFollowingTransaction><value>900</value></sharesOwnedFollowingTransaction>
+            </postTransactionAmounts>
+            <ownershipNature>
+                <directOrIndirectOwnership><value>I</value></directOrIndirectOwnership>
+                <natureOfOwnership><value>By Trust</value></natureOfOwnership>
+            </ownershipNature>
+        </nonDerivativeTransaction>
+    </nonDerivativeTable>
+</ownershipDocument>`;
+
+  it("accepts 1/0 for the reporting owner relationship flags", () => {
+    const parser = new OwnershipFormParser(numericForm4XML);
+    const relationship = parser.parseReportingOwnerInfo().relationship;
+
+    expect(relationship).toEqual({
+      isDirector: true,
+      isOfficer: true,
+      isTenPercentOwner: true,
+      isOther: false,
+      officerTitle: "CEO",
+      otherText: "",
+    });
+  });
+
+  it("accepts 1/0 for equitySwapInvolved and notSubjectToSection16", () => {
+    const parser = new OwnershipFormParser(numericForm4XML);
+
+    expect(parser.parseNonDerivativeTransactions()[0].equitySwapInvolved).toBe(
+      true,
+    );
+    expect(parser.parseDocumentInfo().notSubjectToSection16).toBe(false);
+  });
+
+  it("reads ownership fields nested under ownershipNature", () => {
+    const parser = new OwnershipFormParser(numericForm4XML);
+    const transaction = parser.parseNonDerivativeTransactions()[0];
+
+    expect(transaction.directOrIndirectOwnership).toBe("I");
+    expect(transaction.natureOfOwnership).toBe("By Trust");
+    expect(transaction.sharesOwnedFollowingTransaction).toBe(900);
+  });
+});
+
+describe("OwnershipFormParser derivative transaction details", () => {
+  const derivativeForm4XML = `<?xml version="1.0" encoding="UTF-8"?>
+<ownershipDocument>
+    <schemaVersion>X0306</schemaVersion>
+    <documentType>4</documentType>
+    <periodOfReport>2026-09-15</periodOfReport>
+    <issuer>
+        <issuerCik>0000320193</issuerCik>
+        <issuerName>Apple Inc.</issuerName>
+        <issuerTradingSymbol>AAPL</issuerTradingSymbol>
+    </issuer>
+    <reportingOwner>
+        <reportingOwnerId>
+            <rptOwnerCik>0001214128</rptOwnerCik>
+            <rptOwnerName>Newstead Jennifer</rptOwnerName>
+        </reportingOwnerId>
+        <reportingOwnerRelationship>
+            <isOfficer>true</isOfficer>
+            <officerTitle>SVP, GC and Government Affairs</officerTitle>
+        </reportingOwnerRelationship>
+    </reportingOwner>
+    <derivativeTable>
+        <derivativeTransaction>
+            <securityTitle><value>Restricted Stock Unit</value></securityTitle>
+            <conversionOrExercisePrice><footnoteId id="F2"/></conversionOrExercisePrice>
+            <transactionDate><value>2026-09-15</value></transactionDate>
+            <transactionCoding>
+                <transactionFormType>4</transactionFormType>
+                <transactionCode>M</transactionCode>
+                <equitySwapInvolved>0</equitySwapInvolved>
+            </transactionCoding>
+            <transactionAmounts>
+                <transactionShares><value>30104</value></transactionShares>
+                <transactionPricePerShare><value>12.5</value></transactionPricePerShare>
+                <transactionAcquiredDisposedCode><value>D</value></transactionAcquiredDisposedCode>
+            </transactionAmounts>
+            <exerciseDate><footnoteId id="F4"/></exerciseDate>
+            <expirationDate><footnoteId id="F4"/></expirationDate>
+            <underlyingSecurity>
+                <underlyingSecurityTitle><value>Common Stock</value></underlyingSecurityTitle>
+                <underlyingSecurityShares><value>30104</value></underlyingSecurityShares>
+            </underlyingSecurity>
+            <postTransactionAmounts>
+                <sharesOwnedFollowingTransaction><value>180624</value></sharesOwnedFollowingTransaction>
+            </postTransactionAmounts>
+            <ownershipNature>
+                <directOrIndirectOwnership><value>D</value></directOrIndirectOwnership>
+            </ownershipNature>
+        </derivativeTransaction>
+    </derivativeTable>
+</ownershipDocument>`;
+
+  it("keeps the coding, price and post-transaction blocks", () => {
+    const parser = new OwnershipFormParser(derivativeForm4XML);
+    const transaction = parser.parseDerivativeTransactions()[0];
+
+    expect(transaction.securityTitle).toBe("Restricted Stock Unit");
+    expect(transaction.code).toBe("M");
+    expect(transaction.formType).toBe("4");
+    expect(transaction.equitySwapInvolved).toBe(false);
+    expect(transaction.pricePerShare).toBe(12.5);
+    expect(transaction.shares).toBe(30104);
+    expect(transaction.acquiredDisposedCode).toBe("D");
+    expect(transaction.sharesOwnedFollowingTransaction).toBe(180624);
+    expect(transaction.directOrIndirectOwnership).toBe("D");
+    expect(transaction.underlyingSecurity).toEqual({
+      title: "Common Stock",
+      shares: 30104,
+    });
+  });
+});

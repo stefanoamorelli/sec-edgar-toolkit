@@ -71,6 +71,13 @@ export interface DerivativeTransaction {
   shares: number;
   totalValue: number;
   acquiredDisposedCode: string;
+  pricePerShare?: number;
+  formType?: string;
+  code?: string;
+  equitySwapInvolved?: boolean;
+  sharesOwnedFollowingTransaction?: number;
+  directOrIndirectOwnership?: string;
+  natureOfOwnership?: string;
   exerciseDate?: Date | null;
   expirationDate?: Date | null;
   underlyingSecurity?: UnderlyingSecurity;
